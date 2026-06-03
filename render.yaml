@@ -11,17 +11,20 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: OWNER_PASSWORD
-        sync: false
       - key: CLOUDINARY_CLOUD_NAME
-        sync: false
+        value: dpzpg1qnw
       - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
-        sync: false
+        value: 665614737659754
       - key: CLOUDINARY_UPLOAD_FOLDER
         value: aryan-designer-studio/products
       - key: GMAIL_USER
         value: aryandesignerstudio7@gmail.com
+
+      # ── Secret keys — set these once in Render Dashboard → Environment ────────
+      # These are intentionally NOT stored in this file to keep them off GitHub.
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
       - key: GMAIL_APP_PASSWORD
         sync: false
