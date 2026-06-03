@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { getProducts } from '../lib/productStore'
-import { FaSearch } from 'react-icons/fa'
+import { FaSearch, FaStar, FaFire } from 'react-icons/fa'
 
 const CATEGORIES = [
-  'All',
-  'Shirts',
-  'Pants',
-  'T-Shirts',
-  'Formal Shirts & Pants',
-  'Shirt & Pant Sets',
-  'Formal Sets',
-  'T-Shirt Sets',
-  'Belts',
-  'Branded Shoes',
-  'Watches',
-  'Underwear',
+  'All', 'Shirts', 'Pants', 'T-Shirts', 'Formal Shirts & Pants',
+  'Shirt & Pant Sets', 'Formal Sets', 'T-Shirt Sets',
+  'Belts', 'Branded Shoes', 'Watches', 'Underwear', 'Wedding', 'Ethnic Wear', 'Accessories',
 ]
 
 const PAGE_SIZE = 24
@@ -29,6 +20,7 @@ export default function Products() {
   const activeCategory = searchParams.get('cat') || 'All'
 
   useEffect(() => {
+    // getProducts() returns only status === 'active' products from the backend
     getProducts().then(list => setAll(list))
   }, [])
 
@@ -36,11 +28,8 @@ export default function Products() {
   useEffect(() => { setPage(1) }, [activeCategory, query])
 
   function setCategory(cat) {
-    if (cat === 'All') {
-      setSearchParams({})
-    } else {
-      setSearchParams({ cat })
-    }
+    if (cat === 'All') setSearchParams({})
+    else setSearchParams({ cat })
   }
 
   const filtered = all
@@ -52,11 +41,12 @@ export default function Products() {
 
   function addToCart(e, p) {
     e.preventDefault()
-    if (p.soldOut) { alert('This item is sold out.'); return }
+    const outOfStock = p.stock === 0 || p.soldOut
+    if (outOfStock) { alert('This item is sold out.'); return }
     const cart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
     const found = cart.find(i => i.id === p.id && i.size === 'M')
     if (found) found.quantity += 1
-    else cart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, size: 'M', image: p.images?.[0] })
+    else cart.push({ id: p.id, name: p.name, price: p.discountPrice || p.price, quantity: 1, size: 'M', image: p.thumbnail || p.images?.[0] })
     localStorage.setItem('ads_cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('storage'))
   }
@@ -71,7 +61,7 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Mobile pill filters */}
+      {/* Category filter pills */}
       <div className="filter-pills" style={{ display: 'flex' }}>
         {CATEGORIES.map(cat => (
           <button
@@ -115,24 +105,49 @@ export default function Products() {
           </div>
         ) : (
           <div className="products-grid">
-            {list.map(p => (
-              <Link to={`/product/${p.id}`} key={p.id} className="product-card" style={{ display: 'block' }}>
-                <div className="product-card-img">
-                  <img loading="lazy" src={p.images?.[0]} alt={p.name} />
-                  {p.soldOut && <span className="sold-out-badge">Sold Out</span>}
-                  <div className="quick-add-overlay">
-                    <button className="quick-add-btn" onClick={e => addToCart(e, p)} disabled={p.soldOut}>
-                      {p.soldOut ? 'Sold Out' : '+ Add to Cart'}
-                    </button>
+            {list.map(p => {
+              const thumb = p.thumbnail || p.images?.[0]
+              const outOfStock = p.stock === 0 || p.soldOut
+              const effectivePrice = p.discountPrice || p.price
+
+              return (
+                <Link to={`/product/${p.id}`} key={p.id} className="product-card" style={{ display: 'block' }}>
+                  <div className="product-card-img">
+                    {thumb && <img loading="lazy" src={thumb} alt={p.name} />}
+                    {outOfStock && <span className="sold-out-badge">Out of Stock</span>}
+                    {!outOfStock && p.newArrival && <span className="new-badge">New</span>}
+                    {!outOfStock && p.bestSeller && <span className="bestseller-badge"><FaFire style={{ fontSize: '0.6rem' }} /> Best Seller</span>}
+
+                    <div className="quick-add-overlay">
+                      <button
+                        className="quick-add-btn"
+                        onClick={e => addToCart(e, p)}
+                        disabled={outOfStock}
+                      >
+                        {outOfStock ? 'Out of Stock' : '+ Add to Cart'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="product-card-body">
-                  {p.category && <div className="product-card-category">{p.category}</div>}
-                  <div className="product-card-name">{p.name}</div>
-                  <div className="product-card-price">₹{p.price?.toLocaleString('en-IN')}</div>
-                </div>
-              </Link>
-            ))}
+                  <div className="product-card-body">
+                    {p.category && <div className="product-card-category">{p.category}</div>}
+                    <div className="product-card-name">{p.name}</div>
+                    <div className="product-card-price-row">
+                      <span className="product-card-price">
+                        ₹{Number(effectivePrice).toLocaleString('en-IN')}
+                      </span>
+                      {p.discountPrice && p.price && (
+                        <span className="product-card-original-price">
+                          ₹{Number(p.price).toLocaleString('en-IN')}
+                        </span>
+                      )}
+                    </div>
+                    {outOfStock && (
+                      <div className="product-card-stock-note">Out of stock</div>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         )}
 
@@ -143,11 +158,7 @@ export default function Products() {
             {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
               const p = i + 1
               return (
-                <button
-                  key={p}
-                  className={`pg-btn${page === p ? ' active' : ''}`}
-                  onClick={() => setPage(p)}
-                >
+                <button key={p} className={`pg-btn${page === p ? ' active' : ''}`} onClick={() => setPage(p)}>
                   {p}
                 </button>
               )

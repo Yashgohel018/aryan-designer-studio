@@ -1,147 +1,508 @@
-const express = require('express');
-const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+require('dotenv').config();
+const express    = require('express');
+const cors       = require('cors');
+const fs         = require('fs');
+const path       = require('path');
+const multer     = require('multer');
+const cloudinary = require('cloudinary').v2;
+const nodemailer = require('nodemailer');
+const crypto     = require('crypto');
 
-const app = express();
-const PORT = 5000;
-const DATA_FILE = path.join(__dirname, 'data', 'products.json');
+// ── App Setup ─────────────────────────────────────────────────────────────────
+const app      = express();
+const PORT     = process.env.PORT || 5000;
+const DATA_FILE   = path.join(__dirname, 'data', 'products.json');
+const CONFIG_FILE = path.join(__dirname, 'data', 'config.json');
 
-// ── Owner password (change this to your own secret) ─────────────────────────
-const OWNER_PASSWORD = 'aryan@admin123';
+// ── Cloudinary Config ─────────────────────────────────────────────────────────
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure:     true,
+});
+const UPLOAD_FOLDER = process.env.CLOUDINARY_UPLOAD_FOLDER || 'aryan-designer-studio/products';
 
+// ── Multer (memory storage — files held in RAM, then streamed to Cloudinary) ──
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 15 * 1024 * 1024 },         // 15 MB per file
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
+
+// ── Owner Password (reads from config.json first, then env) ──────────────────
+const OFFICIAL_EMAIL = 'aryandesignerstudio7@gmail.com';
+
+function getOwnerPassword() {
+  try {
+    const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
+    if (cfg.ownerPassword) return cfg.ownerPassword;
+  } catch { /* fall through */ }
+  return process.env.OWNER_PASSWORD || 'aryan@admin123';
+}
+
+function saveOwnerPassword(newPassword) {
+  let cfg = {};
+  try { cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch { /* first time */ }
+  cfg.ownerPassword = newPassword;
+  fs.mkdirSync(path.dirname(CONFIG_FILE), { recursive: true });
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8');
+}
+
+// ── OTP store (in-memory, keyed by token, expires in 10 minutes) ─────────────
+const otpStore = new Map();  // { token → { otp, expiry } }
+const resetTokenStore = new Map(); // { resetToken → expiry } — valid for 10 min after OTP verify
+
+function cleanupExpired() {
+  const now = Date.now();
+  for (const [k, v] of otpStore.entries())  { if (v.expiry < now) otpStore.delete(k); }
+  for (const [k, v] of resetTokenStore.entries()) { if (v < now) resetTokenStore.delete(k); }
+}
+setInterval(cleanupExpired, 60_000);
+
+// ── Nodemailer transporter ─────────────────────────────────────────────────────
+function createTransporter() {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASSWORD,
+    },
+  });
+}
+
+async function sendOTPEmail(otp) {
+  const transporter = createTransporter();
+  await transporter.sendMail({
+    from: `"Aryan Designer Studio" <${process.env.GMAIL_USER}>`,
+    to:   OFFICIAL_EMAIL,
+    subject: '🔐 Admin Password Reset OTP — Aryan Designer Studio',
+    html: `
+      <div style="font-family:'Inter',system-ui,sans-serif;max-width:480px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+        <div style="background:#0e0e0e;padding:2rem;text-align:center">
+          <div style="font-family:Georgia,serif;color:#c8a96e;font-size:1.4rem;font-weight:700;letter-spacing:0.06em">ARYAN DESIGNER STUDIO</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:0.78rem;margin-top:0.25rem;letter-spacing:0.15em;text-transform:uppercase">Owner Portal</div>
+        </div>
+        <div style="padding:2.5rem;text-align:center">
+          <h2 style="font-family:Georgia,serif;margin:0 0 0.5rem;color:#0e0e0e">Password Reset OTP</h2>
+          <p style="color:#666;font-size:0.9rem;margin:0 0 2rem;line-height:1.6">Use the code below to reset your admin password. This code expires in <strong>10 minutes</strong>.</p>
+          <div style="background:#f5f4f0;border:2px dashed #c8a96e;border-radius:12px;padding:1.5rem;margin:0 auto 2rem;display:inline-block;min-width:200px">
+            <div style="font-size:2.8rem;font-weight:800;letter-spacing:0.3em;color:#0e0e0e;font-family:'Courier New',monospace">${otp}</div>
+          </div>
+          <p style="color:#999;font-size:0.8rem;line-height:1.6">If you didn't request this, please ignore this email.<br>Your password will remain unchanged.</p>
+        </div>
+        <div style="background:#f5f4f0;padding:1rem;text-align:center;font-size:0.72rem;color:#aaa">
+          © ${new Date().getFullYear()} Aryan Designer Studio · Surat, India
+        </div>
+      </div>
+    `,
+  });
+}
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    /\.vercel\.app$/,          // allows all *.vercel.app preview & prod URLs
+    /\.vercel\.app$/,
+    /\.netlify\.app$/,
   ],
   credentials: true,
 }));
 
 app.use(express.json({ limit: '10mb' }));
 
-// Helper to read data
+// ── JSON file helpers ─────────────────────────────────────────────────────────
 function readData() {
-    try {
-        const data = fs.readFileSync(DATA_FILE, 'utf8');
-        return JSON.parse(data);
-    } catch (err) {
-        console.error("Error reading data:", err);
-        return [];
-    }
+  try {
+    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  } catch {
+    return [];
+  }
 }
 
-// Helper to write data
 function writeData(data) {
-    try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
-        return true;
-    } catch (err) {
-        console.error("Error writing data:", err);
-        return false;
-    }
+  try {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+    return true;
+  } catch (err) {
+    console.error('writeData error:', err);
+    return false;
+  }
 }
 
-// Middleware – verify owner password header for write routes
+// ── Auth middleware ───────────────────────────────────────────────────────────
 function requireOwner(req, res, next) {
-    const pwd = req.headers['x-owner-password'];
-    if (pwd !== OWNER_PASSWORD) {
-        return res.status(401).json({ error: 'Unauthorized. Wrong owner password.' });
-    }
-    next();
+  const pwd = req.headers['x-owner-password'];
+  if (pwd !== getOwnerPassword()) {
+    return res.status(401).json({ error: 'Unauthorized. Wrong owner password.' });
+  }
+  next();
 }
 
-app.get('/', (req, res) => {
-    res.send('Hello from Aryan Designer Studio Backend!');
+// ── Cloudinary image upload helper ───────────────────────────────────────────
+function uploadToCloudinary(fileBuffer, originalName) {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder:          UPLOAD_FOLDER,
+        use_filename:    true,
+        unique_filename: true,
+        overwrite:       false,
+        resource_type:   'image',
+        format:          'webp',
+        transformation:  [
+          { width: 1200, height: 1600, crop: 'limit', quality: 'auto:best' },
+        ],
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    uploadStream.end(fileBuffer);
+  });
+}
+
+// ── Cloudinary image deletion helper ─────────────────────────────────────────
+async function deleteCloudinaryImages(imageUrls) {
+  if (!imageUrls || imageUrls.length === 0) return;
+  const publicIds = imageUrls.map(url => {
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[a-z]+$/i);
+    return match ? match[1] : null;
+  }).filter(Boolean);
+
+  for (const publicId of publicIds) {
+    try {
+      await cloudinary.uploader.destroy(publicId);
+    } catch (err) {
+      console.error(`Failed to delete Cloudinary image ${publicId}:`, err.message);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  ROUTES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/', (_req, res) => {
+  res.send('Aryan Designer Studio — Backend is running ✓');
 });
 
-// ── Auth: verify owner password ──────────────────────────────────────────────
+// ── Auth — Login ──────────────────────────────────────────────────────────────
 app.post('/api/auth/owner', (req, res) => {
-    const { password } = req.body;
-    if (password === OWNER_PASSWORD) {
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ success: false, error: 'Wrong password' });
-    }
+  const { password } = req.body;
+  if (password === getOwnerPassword()) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, error: 'Wrong password' });
+  }
 });
 
-// ── GET all products (public) ────────────────────────────────────────────────
-app.get('/api/products', (req, res) => {
-    const products = readData();
-    res.json(products);
+// ── Auth — Forgot Password: Send OTP ─────────────────────────────────────────
+app.post('/api/auth/forgot-password', async (_req, res) => {
+  // Rate-limit: only 3 active OTPs allowed in store at once
+  if (otpStore.size >= 3) {
+    cleanupExpired();
+  }
+
+  const otp       = String(Math.floor(100000 + Math.random() * 900000)); // 6 digits
+  const token     = crypto.randomBytes(24).toString('hex');
+  const expiry    = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+  otpStore.set(token, { otp, expiry });
+
+  const gmailConfigured = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD &&
+    process.env.GMAIL_APP_PASSWORD !== 'your_16char_app_password_here');
+
+  if (!gmailConfigured) {
+    // Dev fallback: log OTP to console
+    console.log(`\n[DEV] OTP for password reset: ${otp}\n`);
+    return res.json({
+      success: true,
+      token,
+      dev: true,
+      message: 'Gmail not configured — OTP printed to backend console.',
+    });
+  }
+
+  try {
+    await sendOTPEmail(otp);
+    res.json({
+      success: true,
+      token,
+      message: `OTP sent to ${OFFICIAL_EMAIL}`,
+    });
+  } catch (err) {
+    console.error('Email send error:', err);
+    otpStore.delete(token);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to send OTP email. Check Gmail App Password in .env.',
+      details: err.message,
+    });
+  }
 });
 
-// ── POST add a single new product (owner only) ───────────────────────────────
+// ── Auth — Verify OTP ─────────────────────────────────────────────────────────
+app.post('/api/auth/verify-otp', (req, res) => {
+  const { token, otp } = req.body;
+
+  if (!token || !otp) {
+    return res.status(400).json({ success: false, error: 'token and otp are required.' });
+  }
+
+  const entry = otpStore.get(token);
+  if (!entry) {
+    return res.status(400).json({ success: false, error: 'Invalid or expired session. Request a new OTP.' });
+  }
+  if (Date.now() > entry.expiry) {
+    otpStore.delete(token);
+    return res.status(400).json({ success: false, error: 'OTP has expired. Request a new one.' });
+  }
+  if (entry.otp !== otp.trim()) {
+    return res.status(400).json({ success: false, error: 'Incorrect OTP. Please try again.' });
+  }
+
+  // OTP verified — issue a one-time reset token valid for 10 minutes
+  otpStore.delete(token);
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  resetTokenStore.set(resetToken, Date.now() + 10 * 60 * 1000);
+
+  res.json({ success: true, resetToken });
+});
+
+// ── Auth — Reset Password ─────────────────────────────────────────────────────
+app.post('/api/auth/reset-password', (req, res) => {
+  const { resetToken, newPassword } = req.body;
+
+  if (!resetToken || !newPassword) {
+    return res.status(400).json({ success: false, error: 'resetToken and newPassword are required.' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ success: false, error: 'Password must be at least 6 characters.' });
+  }
+
+  const expiry = resetTokenStore.get(resetToken);
+  if (!expiry) {
+    return res.status(400).json({ success: false, error: 'Invalid reset session. Start over.' });
+  }
+  if (Date.now() > expiry) {
+    resetTokenStore.delete(resetToken);
+    return res.status(400).json({ success: false, error: 'Reset session expired. Request a new OTP.' });
+  }
+
+  // Save new password
+  try {
+    saveOwnerPassword(newPassword);
+    resetTokenStore.delete(resetToken);
+    console.log('[Auth] Owner password updated via Forgot Password flow.');
+    res.json({ success: true, message: 'Password updated successfully!' });
+  } catch (err) {
+    console.error('Failed to save password:', err);
+    res.status(500).json({ success: false, error: 'Failed to save new password.' });
+  }
+});
+
+// ── GET all ACTIVE products (public storefront) ───────────────────────────────
+app.get('/api/products', (_req, res) => {
+  const products = readData();
+  const active = products.filter(p => p.status === 'active');
+  res.json(active);
+});
+
+// ── GET ALL products including drafts (admin only) ────────────────────────────
+app.get('/api/products/all', requireOwner, (_req, res) => {
+  res.json(readData());
+});
+
+// ── GET single product by id (public) ────────────────────────────────────────
+app.get('/api/products/:id', (req, res) => {
+  const products = readData();
+  const product = products.find(p => p.id === req.params.id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  res.json(product);
+});
+
+// ── POST upload images to Cloudinary (owner only) ────────────────────────────
+app.post('/api/products/upload-images', requireOwner, upload.array('images', 5), async (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No files received.' });
+  }
+
+  try {
+    const uploadResults = await Promise.all(
+      req.files.map(file => uploadToCloudinary(file.buffer, file.originalname))
+    );
+
+    const urls      = uploadResults.map(r => r.secure_url);
+    const publicIds = uploadResults.map(r => r.public_id);
+
+    res.json({
+      success: true,
+      urls,
+      publicIds,
+      thumbnail: urls[0] || null,
+    });
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    res.status(500).json({
+      error: 'One or more images failed to upload. Please retry.',
+      details: err.message,
+    });
+  }
+});
+
+// ── POST add a new product (owner only) ───────────────────────────────────────
 app.post('/api/products/add', requireOwner, (req, res) => {
-    const products = readData();
-    const newProduct = req.body;
+  const products = readData();
+  const body = req.body;
 
-    if (!newProduct.name || newProduct.price === undefined) {
-        return res.status(400).json({ error: 'name and price are required' });
-    }
+  if (!body.name || body.name.trim() === '') {
+    return res.status(400).json({ error: 'Product name is required.' });
+  }
+  if (body.price === undefined || body.price === null || body.price === '') {
+    return res.status(400).json({ error: 'Price is required.' });
+  }
+  if (!Array.isArray(body.images) || body.images.length === 0) {
+    return res.status(400).json({ error: 'At least one product image is required.' });
+  }
 
-    newProduct.id = 'prod_' + Date.now();
-    if (!Array.isArray(newProduct.images)) {
-        newProduct.images = newProduct.images ? [newProduct.images] : [];
-    }
-    newProduct.soldOut = !!newProduct.soldOut;
+  if (body.sku && products.some(p => p.sku === body.sku)) {
+    return res.status(409).json({ error: `SKU "${body.sku}" already exists.` });
+  }
 
-    products.push(newProduct);
-    if (writeData(products)) {
-        res.status(201).json({ success: true, product: newProduct });
-    } else {
-        res.status(500).json({ error: 'Failed to save product' });
-    }
+  const now = new Date().toISOString();
+  const newProduct = {
+    id:            'prod_' + Date.now(),
+    name:          (body.name || '').trim(),
+    category:      (body.category || '').trim(),
+    subcategory:   (body.subcategory || '').trim(),
+    brand:         (body.brand || 'Aryan Designer Studio').trim(),
+    sku:           (body.sku || '').trim(),
+    price:         Number(body.price) || 0,
+    discountPrice: body.discountPrice ? Number(body.discountPrice) : null,
+    stock:         Number(body.stock) || 0,
+    description:   (body.description || '').trim(),
+    sizes:         Array.isArray(body.sizes)  ? body.sizes  : [],
+    colors:        Array.isArray(body.colors) ? body.colors : [],
+    tags:          Array.isArray(body.tags)   ? body.tags   : [],
+    featured:      !!body.featured,
+    newArrival:    !!body.newArrival,
+    bestSeller:    !!body.bestSeller,
+    status:        body.status === 'active' ? 'active' : 'draft',
+    thumbnail:     body.images[0] || null,
+    images:        body.images,
+    views:         0,
+    soldCount:     0,
+    createdAt:     now,
+    updatedAt:     now,
+    soldOut:       (Number(body.stock) || 0) === 0,
+    fabric:        (body.fabric || '').trim(),
+  };
+
+  products.push(newProduct);
+  if (writeData(products)) {
+    res.status(201).json({ success: true, product: newProduct });
+  } else {
+    res.status(500).json({ error: 'Failed to save product.' });
+  }
 });
 
 // ── PUT update product by id (owner only) ────────────────────────────────────
 app.put('/api/products/:id', requireOwner, (req, res) => {
-    const products = readData();
-    const idx = products.findIndex(p => p.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ error: 'Product not found' });
+  const products = readData();
+  const idx = products.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Product not found.' });
 
-    const updated = { ...products[idx], ...req.body, id: req.params.id };
-    if (!Array.isArray(updated.images)) {
-        updated.images = updated.images ? [updated.images] : [];
-    }
-    updated.soldOut = !!updated.soldOut;
-    products[idx] = updated;
+  const body     = req.body;
+  const existing = products[idx];
 
-    if (writeData(products)) {
-        res.json({ success: true, product: updated });
-    } else {
-        res.status(500).json({ error: 'Failed to update product' });
-    }
+  if (body.sku && products.some(p => p.sku === body.sku && p.id !== req.params.id)) {
+    return res.status(409).json({ error: `SKU "${body.sku}" already in use by another product.` });
+  }
+
+  const now    = new Date().toISOString();
+  const images = Array.isArray(body.images) && body.images.length > 0
+    ? body.images : existing.images;
+
+  const updated = {
+    ...existing,
+    name:          body.name !== undefined        ? String(body.name).trim()         : existing.name,
+    category:      body.category !== undefined    ? String(body.category).trim()     : existing.category,
+    subcategory:   body.subcategory !== undefined ? String(body.subcategory).trim()  : existing.subcategory,
+    brand:         body.brand !== undefined       ? String(body.brand).trim()        : existing.brand,
+    sku:           body.sku !== undefined         ? String(body.sku).trim()          : existing.sku,
+    price:         body.price !== undefined       ? Number(body.price)               : existing.price,
+    discountPrice: body.discountPrice !== undefined
+                     ? (body.discountPrice === '' || body.discountPrice === null ? null : Number(body.discountPrice))
+                     : existing.discountPrice,
+    stock:         body.stock !== undefined       ? Number(body.stock)               : existing.stock,
+    description:   body.description !== undefined ? String(body.description).trim()  : existing.description,
+    sizes:         Array.isArray(body.sizes)      ? body.sizes                       : existing.sizes,
+    colors:        Array.isArray(body.colors)     ? body.colors                      : existing.colors,
+    tags:          Array.isArray(body.tags)       ? body.tags                        : existing.tags,
+    featured:      body.featured !== undefined    ? !!body.featured                  : existing.featured,
+    newArrival:    body.newArrival !== undefined  ? !!body.newArrival                : existing.newArrival,
+    bestSeller:    body.bestSeller !== undefined  ? !!body.bestSeller                : existing.bestSeller,
+    status:        body.status === 'active' || body.status === 'draft'
+                     ? body.status : existing.status,
+    thumbnail:     images[0] || existing.thumbnail,
+    images,
+    fabric:        body.fabric !== undefined      ? String(body.fabric).trim()       : (existing.fabric || ''),
+    soldOut:       (body.stock !== undefined ? Number(body.stock) : existing.stock) === 0,
+    updatedAt:     now,
+  };
+
+  products[idx] = updated;
+  if (writeData(products)) {
+    res.json({ success: true, product: updated });
+  } else {
+    res.status(500).json({ error: 'Failed to update product.' });
+  }
 });
 
 // ── DELETE product by id (owner only) ────────────────────────────────────────
-app.delete('/api/products/:id', requireOwner, (req, res) => {
-    const products = readData();
-    const idx = products.findIndex(p => p.id === req.params.id);
-    if (idx === -1) return res.status(404).json({ error: 'Product not found' });
+app.delete('/api/products/:id', requireOwner, async (req, res) => {
+  const products = readData();
+  const idx = products.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Product not found.' });
 
-    products.splice(idx, 1);
-    if (writeData(products)) {
-        res.json({ success: true });
-    } else {
-        res.status(500).json({ error: 'Failed to delete product' });
-    }
+  const product = products[idx];
+  deleteCloudinaryImages([...(product.images || [])].filter(Boolean))
+    .catch(e => console.error('Cloudinary cleanup error:', e.message));
+
+  products.splice(idx, 1);
+  if (writeData(products)) {
+    res.json({ success: true, deleted: product.id });
+  } else {
+    res.status(500).json({ error: 'Failed to delete product.' });
+  }
 });
 
-// ── POST bulk-save all products (owner only) ─────────────────────────────────
+// ── POST bulk-save products (owner only — kept for backward compat) ────────────
 app.post('/api/products', requireOwner, (req, res) => {
-    const products = req.body;
-    if (!Array.isArray(products)) {
-        return res.status(400).json({ error: 'Expected an array of products.' });
-    }
-    if (writeData(products)) {
-        res.json({ success: true, count: products.length, message: 'Products saved successfully.' });
-    } else {
-        res.status(500).json({ error: 'Failed to save products.' });
-    }
+  const products = req.body;
+  if (!Array.isArray(products)) {
+    return res.status(400).json({ error: 'Expected an array of products.' });
+  }
+  if (writeData(products)) {
+    res.json({ success: true, count: products.length });
+  } else {
+    res.status(500).json({ error: 'Failed to save products.' });
+  }
 });
 
+// ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Network access: http://<your-ip>:${PORT}`);
+  const cloudOk  = !!process.env.CLOUDINARY_CLOUD_NAME;
+  const gmailOk  = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD &&
+    process.env.GMAIL_APP_PASSWORD !== 'your_16char_app_password_here');
+  console.log(`\n🚀 Aryan Designer Studio Backend`);
+  console.log(`   Server:    http://localhost:${PORT}`);
+  console.log(`   Cloudinary: ${cloudOk ? '✓ configured' : '✗ NOT configured (set env vars)'}`);
+  console.log(`   Gmail OTP:  ${gmailOk ? `✓ configured (${process.env.GMAIL_USER})` : '✗ NOT configured — OTPs will print to console'}`);
+  console.log(`   Data file: ${DATA_FILE}\n`);
 });

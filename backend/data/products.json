@@ -1,35 +1,41 @@
 [
   {
-    "id": "p1",
-    "name": "Red Shirt",
+    "id": "prod_1780482419936",
+    "name": "Classic White Shirt with Pant",
+    "category": "Shirts",
+    "subcategory": "Aesthetic",
+    "brand": "Aryan Designer Studio",
+    "sku": "",
     "price": 3500,
-    "category": "Shirts",
-    "images": [
-      "https://images.unsplash.com/photo-1520975915233-3b9a3a6bf1b7?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=1",
-      "https://images.unsplash.com/photo-1520975891056-bb0d1b37f6a9?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=2"
+    "discountPrice": null,
+    "stock": 2,
+    "description": "A premium white shirt for everyday use",
+    "sizes": [
+      "S",
+      "M",
+      "L"
     ],
-    "fabric": "Silk Blend",
-    "description": "Elegant red lehenga with fine embroidery, perfect for weddings and festivities.",
-    "soldOut": true
-  },
-  {
-    "id": "p2",
-    "name": "Pant",
-    "price": 5000,
-    "category": "Pants",
-    "images": [],
-    "fabric": "Brocade",
-    "description": "Handcrafted sherwani with royal blue finish and exquisite detailing.",
-    "soldOut": false
-  },
-  {
-    "id": "p3",
-    "name": "Casual Tee - White",
-    "price": 800,
-    "category": "Shirts",
-    "images": [],
-    "fabric": "Cotton",
-    "description": "Soft breathable cotton tee for everyday comfort.",
-    "soldOut": false
+    "colors": [
+      "White"
+    ],
+    "tags": [
+      "Casual"
+    ],
+    "featured": false,
+    "newArrival": true,
+    "bestSeller": true,
+    "status": "active",
+    "thumbnail": "https://res.cloudinary.com/dpzpg1qnw/image/upload/v1780482418/aryan-designer-studio/products/file_dnqfbf.webp",
+    "images": [
+      "https://res.cloudinary.com/dpzpg1qnw/image/upload/v1780482418/aryan-designer-studio/products/file_dnqfbf.webp",
+      "https://res.cloudinary.com/dpzpg1qnw/image/upload/v1780482417/aryan-designer-studio/products/file_lhnftk.webp",
+      "https://res.cloudinary.com/dpzpg1qnw/image/upload/v1780482418/aryan-designer-studio/products/file_fj2fc9.webp"
+    ],
+    "views": 0,
+    "soldCount": 0,
+    "createdAt": "2026-06-03T10:26:59.936Z",
+    "updatedAt": "2026-06-03T10:39:08.916Z",
+    "soldOut": false,
+    "fabric": "silk blend"
   }
 ]
