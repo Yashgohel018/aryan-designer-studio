@@ -28,3 +28,9 @@ services:
         sync: false
       - key: GMAIL_APP_PASSWORD
         sync: false
+      # Upstash Redis — for persisting password resets across restarts/redeploys
+      # Get free credentials at: https://upstash.com → Create Database → REST API
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

@@ -12,7 +12,7 @@ const crypto     = require('crypto');
 const app      = express();
 const PORT     = process.env.PORT || 5000;
 const DATA_FILE   = path.join(__dirname, 'data', 'products.json');
-const CONFIG_FILE = path.join(__dirname, 'data', 'config.json');
+const CONFIG_FILE = path.join(__dirname, 'data', 'config.json'); // local dev fallback
 
 // ── Cloudinary Config ─────────────────────────────────────────────────────────
 cloudinary.config({
@@ -33,23 +33,53 @@ const upload = multer({
   },
 });
 
-// ── Owner Password (reads from config.json first, then env) ──────────────────
+// ── Owner Password ───────────────────────────────────────────────────────────
+// Priority: Upstash Redis (production) → config.json (local dev) → OWNER_PASSWORD env
 const OFFICIAL_EMAIL = 'aryandesignerstudio7@gmail.com';
+const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const REDIS_KEY   = 'ads:ownerPassword';
 
-function getOwnerPassword() {
+async function getOwnerPassword() {
+  // 1. Try Upstash Redis (production)
+  if (REDIS_URL && REDIS_TOKEN) {
+    try {
+      const res = await fetch(`${REDIS_URL}/get/${REDIS_KEY}`, {
+        headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+      });
+      const { result } = await res.json();
+      if (result) return result;
+    } catch (e) {
+      console.error('[Redis] getOwnerPassword error:', e.message);
+    }
+  }
+  // 2. Try local config.json (dev)
   try {
     const cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
     if (cfg.ownerPassword) return cfg.ownerPassword;
-  } catch { /* fall through */ }
+  } catch { /* no config.json yet */ }
+  // 3. Fallback to env var
   return process.env.OWNER_PASSWORD || 'aryan@admin123';
 }
 
-function saveOwnerPassword(newPassword) {
+async function saveOwnerPassword(newPassword) {
+  // 1. Save to Upstash Redis (production)
+  if (REDIS_URL && REDIS_TOKEN) {
+    const res = await fetch(`${REDIS_URL}/set/${REDIS_KEY}/${encodeURIComponent(newPassword)}`, {
+      headers: { Authorization: `Bearer ${REDIS_TOKEN}` },
+    });
+    const data = await res.json();
+    if (data.result !== 'OK') throw new Error('Redis save failed: ' + JSON.stringify(data));
+    console.log('[Redis] Owner password saved to Upstash.');
+    return;
+  }
+  // 2. Fallback: save to local config.json (dev)
   let cfg = {};
   try { cfg = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')); } catch { /* first time */ }
   cfg.ownerPassword = newPassword;
   fs.mkdirSync(path.dirname(CONFIG_FILE), { recursive: true });
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8');
+  console.log('[Config] Owner password saved to config.json (local dev).');
 }
 
 // ── OTP store (in-memory, keyed by token, expires in 10 minutes) ─────────────
@@ -134,9 +164,10 @@ function writeData(data) {
 }
 
 // ── Auth middleware ───────────────────────────────────────────────────────────
-function requireOwner(req, res, next) {
+async function requireOwner(req, res, next) {
   const pwd = req.headers['x-owner-password'];
-  if (pwd !== getOwnerPassword()) {
+  const correct = await getOwnerPassword();
+  if (pwd !== correct) {
     return res.status(401).json({ error: 'Unauthorized. Wrong owner password.' });
   }
   next();
@@ -192,9 +223,10 @@ app.get('/', (_req, res) => {
 });
 
 // ── Auth — Login ──────────────────────────────────────────────────────────────
-app.post('/api/auth/owner', (req, res) => {
+app.post('/api/auth/owner', async (req, res) => {
   const { password } = req.body;
-  if (password === getOwnerPassword()) {
+  const correct = await getOwnerPassword();
+  if (password === correct) {
     res.json({ success: true });
   } else {
     res.status(401).json({ success: false, error: 'Wrong password' });
@@ -500,9 +532,11 @@ app.listen(PORT, '0.0.0.0', () => {
   const cloudOk  = !!process.env.CLOUDINARY_CLOUD_NAME;
   const gmailOk  = !!(process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD &&
     process.env.GMAIL_APP_PASSWORD !== 'your_16char_app_password_here');
+  const redisOk  = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
   console.log(`\n🚀 Aryan Designer Studio Backend`);
   console.log(`   Server:    http://localhost:${PORT}`);
   console.log(`   Cloudinary: ${cloudOk ? '✓ configured' : '✗ NOT configured (set env vars)'}`);
   console.log(`   Gmail OTP:  ${gmailOk ? `✓ configured (${process.env.GMAIL_USER})` : '✗ NOT configured — OTPs will print to console'}`);
+  console.log(`   Redis (pwd): ${redisOk ? '✓ configured (password resets persist)' : '✗ NOT configured — using local config.json (dev only)'}`);
   console.log(`   Data file: ${DATA_FILE}\n`);
 });
