@@ -39,13 +39,20 @@ export default function Cart() {
 
   function sendWhatsApp() {
     if (items.length === 0) { alert('Cart is empty'); return }
-    let msg = `Hello Aryan Designer Studio! I'd like to place an order:%0A%0A`
-    items.forEach(it => {
-      msg += `• *${it.name}* — Size: ${it.size} — Rs.${it.price} x ${it.quantity} = Rs.${it.price * it.quantity}%0A`
+    let msg = `Hello Aryan Designer Studio! I'd like to place an order:\n\n`
+    items.forEach((it, idx) => {
+      const imgUrl = it.image || productImages[it.id] || ''
+      msg += `${idx + 1}. *${it.name}*\n`
+      msg += `   • Size: ${it.size}\n`
+      msg += `   • Price: Rs.${it.price} x ${it.quantity} = Rs.${it.price * it.quantity}\n`
+      if (imgUrl) {
+        msg += `   • Image: ${imgUrl}\n`
+      }
+      msg += `\n`
     })
-    msg += `%0A*Total: Rs.${subtotal.toLocaleString('en-IN')}*%0A%0APlease confirm my order. Thank you!`
+    msg += `*Total: Rs.${subtotal.toLocaleString('en-IN')}*\n\nPlease confirm my order. Thank you!`
     const phone = OWNER_WHATSAPP.replace(/[^0-9]/g, '')
-    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank')
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank')
   }
 
   return (
