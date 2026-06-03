@@ -4,8 +4,24 @@ services:
     runtime: node
     rootDir: backend
     buildCommand: npm install
-    startCommand: node index.js
+    startCommand: npm start
     plan: free
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_UPLOAD_FOLDER
+        value: aryan-designer-studio/products
+      - key: GMAIL_USER
+        value: aryandesignerstudio7@gmail.com
+      - key: GMAIL_APP_PASSWORD
+        sync: false
