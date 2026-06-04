@@ -5,11 +5,11 @@ import { FaSearch, FaStar, FaFire } from 'react-icons/fa'
 
 const CATEGORIES = [
   'All', 'Shirts', 'Pants', 'T-Shirts', 'Formal Shirts & Pants',
-  'Shirt & Pant Sets', 'Formal Sets', 'T-Shirt Sets',
-  'Belts', 'Branded Shoes', 'Watches', 'Underwear', 'Wedding', 'Ethnic Wear', 'Accessories',
+  'Shirt & Pant Sets', 'Formal Sets',
+  'Belts', 'Branded Shoes', 'Watches', 'Accessories',
 ]
 
-const PAGE_SIZE = 24
+const PAGE_SIZE = 30
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -154,17 +154,58 @@ export default function Products() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="pagination">
-            <button className="pg-btn" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>‹</button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              const p = i + 1
-              return (
-                <button key={p} className={`pg-btn${page === p ? ' active' : ''}`} onClick={() => setPage(p)}>
-                  {p}
-                </button>
+            {/* Prev */}
+            <button
+              className="pg-btn pg-prev"
+              onClick={() => { setPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              disabled={page === 1}
+            >
+              ‹ Prev
+            </button>
+
+            {/* Smart windowed page numbers */}
+            {(() => {
+              const pages = []
+              const delta = 2 // pages on each side of current
+              const range = []
+              for (let i = Math.max(2, page - delta); i <= Math.min(totalPages - 1, page + delta); i++) {
+                range.push(i)
+              }
+
+              // Always show page 1
+              pages.push(
+                <button key={1} className={`pg-btn${page === 1 ? ' active' : ''}`} onClick={() => { setPage(1); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>1</button>
               )
-            })}
-            <button className="pg-btn" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>›</button>
-            <span className="pg-info">Page {page} / {totalPages}</span>
+
+              // Left ellipsis
+              if (range[0] > 2) pages.push(<span key="l-dots" className="pg-dots">…</span>)
+
+              // Middle range
+              range.forEach(n => pages.push(
+                <button key={n} className={`pg-btn${page === n ? ' active' : ''}`} onClick={() => { setPage(n); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{n}</button>
+              ))
+
+              // Right ellipsis
+              if (range[range.length - 1] < totalPages - 1) pages.push(<span key="r-dots" className="pg-dots">…</span>)
+
+              // Always show last page
+              if (totalPages > 1) pages.push(
+                <button key={totalPages} className={`pg-btn${page === totalPages ? ' active' : ''}`} onClick={() => { setPage(totalPages); window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{totalPages}</button>
+              )
+
+              return pages
+            })()}
+
+            {/* Next */}
+            <button
+              className="pg-btn pg-next"
+              onClick={() => { setPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              disabled={page === totalPages}
+            >
+              Next ›
+            </button>
+
+            <span className="pg-info">Page {page} of {totalPages} &nbsp;·&nbsp; {filtered.length} products</span>
           </div>
         )}
       </div>

@@ -26,6 +26,9 @@ const CATEGORIES = [
 
 const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size']
 
+const SHOE_SIZES = ['UK 6', 'UK 7', 'UK 8', 'UK 9', 'UK 10', 'UK 11']
+const WATCH_SIZES = ['Free Size']
+
 const EMPTY_FORM = {
   name: '', category: 'Shirts', subcategory: '', brand: 'Aryan Designer Studio',
   sku: '', status: 'active',
@@ -57,20 +60,20 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
   const OFFICIAL_EMAIL = 'aryandesignerstudio7@gmail.com'
   const OTP_EXPIRY_SEC = 600  // 10 min
 
-  const [step, setStep]             = useState(1)  // 1=send, 2=enter otp, 3=new pwd
-  const [token, setToken]           = useState('')
+  const [step, setStep] = useState(1)  // 1=send, 2=enter otp, 3=new pwd
+  const [token, setToken] = useState('')
   const [resetToken, setResetToken] = useState('')
-  const [otp, setOtp]               = useState(['','','','','',''])
-  const [newPwd, setNewPwd]         = useState('')
+  const [otp, setOtp] = useState(['', '', '', '', '', ''])
+  const [newPwd, setNewPwd] = useState('')
   const [confirmPwd, setConfirmPwd] = useState('')
-  const [showPwd, setShowPwd]       = useState(false)
-  const [loading, setLoading]       = useState(false)
-  const [err, setErr]               = useState('')
-  const [success, setSuccess]       = useState('')
-  const [countdown, setCountdown]   = useState(0)
-  const [devMode, setDevMode]       = useState(false)
-  const otpRefs                     = useRef([])
-  const timerRef                    = useRef(null)
+  const [showPwd, setShowPwd] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState('')
+  const [success, setSuccess] = useState('')
+  const [countdown, setCountdown] = useState(0)
+  const [devMode, setDevMode] = useState(false)
+  const otpRefs = useRef([])
+  const timerRef = useRef(null)
 
   // Countdown timer
   function startCountdown(sec) {
@@ -87,7 +90,7 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
   useEffect(() => () => clearInterval(timerRef.current), [])
 
   function fmtTime(s) {
-    return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
   }
 
   // STEP 1 — Send OTP
@@ -129,8 +132,8 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
 
   // STEP 3 — Reset Password
   async function handleReset() {
-    if (!newPwd)               { setErr('Enter a new password.'); return }
-    if (newPwd.length < 6)     { setErr('Password must be at least 6 characters.'); return }
+    if (!newPwd) { setErr('Enter a new password.'); return }
+    if (newPwd.length < 6) { setErr('Password must be at least 6 characters.'); return }
     if (newPwd !== confirmPwd) { setErr('Passwords do not match.'); return }
     setErr(''); setLoading(true)
     try {
@@ -146,18 +149,18 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
 
   // OTP digit box handler
   function handleOtpChange(idx, val) {
-    const v = val.replace(/\D/g,'').slice(-1)
+    const v = val.replace(/\D/g, '').slice(-1)
     const next = [...otp]; next[idx] = v; setOtp(next)
     setErr('')
-    if (v && idx < 5) otpRefs.current[idx+1]?.focus()
+    if (v && idx < 5) otpRefs.current[idx + 1]?.focus()
   }
   function handleOtpKey(idx, e) {
     if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
-      otpRefs.current[idx-1]?.focus()
+      otpRefs.current[idx - 1]?.focus()
     }
   }
   function handleOtpPaste(e) {
-    const text = e.clipboardData.getData('text').replace(/\D/g,'').slice(0,6)
+    const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
     if (text.length === 6) {
       setOtp(text.split(''))
       otpRefs.current[5]?.focus()
@@ -169,18 +172,19 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
     <div style={s.modalOverlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{ ...s.confirmCard, maxWidth: 420, textAlign: 'left', padding: '2rem' }}>
         {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div>
-            <div style={{ fontSize:'0.68rem', letterSpacing:'0.15em', textTransform:'uppercase', color:'#c8a96e', fontWeight:600, marginBottom:'0.2rem' }}>Owner Portal</div>
-            <h2 style={{ fontFamily:'Georgia,serif', fontSize:'1.3rem', margin:0 }}>Forgot Password</h2>
+            <div style={{ fontSize: '0.68rem', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#c8a96e', fontWeight: 600, marginBottom: '0.2rem' }}>Owner Portal</div>
+            <h2 style={{ fontFamily: 'Georgia,serif', fontSize: '1.3rem', margin: 0 }}>Forgot Password</h2>
           </div>
-          <button onClick={onClose} style={{ background:'none', border:'none', fontSize:'1.3rem', cursor:'pointer', color:'#aaa' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#aaa' }}>✕</button>
         </div>
 
         {/* Step indicator */}
-        <div style={{ display:'flex', gap:'0.4rem', marginBottom:'1.75rem' }}>
-          {[1,2,3].map(n => (
-            <div key={n} style={{ flex:1, height:3, borderRadius:3,
+        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.75rem' }}>
+          {[1, 2, 3].map(n => (
+            <div key={n} style={{
+              flex: 1, height: 3, borderRadius: 3,
               background: n <= step ? '#0e0e0e' : '#e0ddd8',
               transition: 'background 0.3s'
             }} />
@@ -190,47 +194,47 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
         {/* ─── STEP 1: Confirm email ─────────────────────── */}
         {step === 1 && (
           <>
-            <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
-              <div style={{ fontSize:'3rem', marginBottom:'0.75rem' }}>📧</div>
-              <p style={{ color:'#555', fontSize:'0.88rem', lineHeight:1.7, margin:0 }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>📧</div>
+              <p style={{ color: '#555', fontSize: '0.88rem', lineHeight: 1.7, margin: 0 }}>
                 An OTP will be sent to your official business email:
               </p>
-              <div style={{ marginTop:'0.75rem', background:'#f5f4f0', borderRadius:8, padding:'0.65rem 1rem', display:'inline-block', fontWeight:700, fontSize:'0.88rem', color:'#0e0e0e' }}>
+              <div style={{ marginTop: '0.75rem', background: '#f5f4f0', borderRadius: 8, padding: '0.65rem 1rem', display: 'inline-block', fontWeight: 700, fontSize: '0.88rem', color: '#0e0e0e' }}>
                 {OFFICIAL_EMAIL}
               </div>
             </div>
-            {err && <p style={{ ...s.errText, textAlign:'center', marginBottom:'1rem' }}>{err}</p>}
-            <button onClick={handleSendOTP} disabled={loading} style={{ ...s.loginBtn, width:'100%' }}>
+            {err && <p style={{ ...s.errText, textAlign: 'center', marginBottom: '1rem' }}>{err}</p>}
+            <button onClick={handleSendOTP} disabled={loading} style={{ ...s.loginBtn, width: '100%' }}>
               {loading ? 'Sending OTP…' : '📨 Send OTP to Email'}
             </button>
-            <button onClick={onClose} style={{ width:'100%', background:'none', border:'none', color:'#aaa', marginTop:'0.65rem', padding:'0.5rem', cursor:'pointer', fontSize:'0.82rem' }}>Cancel</button>
+            <button onClick={onClose} style={{ width: '100%', background: 'none', border: 'none', color: '#aaa', marginTop: '0.65rem', padding: '0.5rem', cursor: 'pointer', fontSize: '0.82rem' }}>Cancel</button>
           </>
         )}
 
         {/* ─── STEP 2: Enter OTP ────────────────────────── */}
         {step === 2 && (
           <>
-            <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
-              <div style={{ fontSize:'2.5rem', marginBottom:'0.5rem' }}>🔢</div>
-              <p style={{ color:'#555', fontSize:'0.88rem', lineHeight:1.7, margin:'0 0 0.5rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔢</div>
+              <p style={{ color: '#555', fontSize: '0.88rem', lineHeight: 1.7, margin: '0 0 0.5rem' }}>
                 {devMode
                   ? 'Gmail not configured — check your backend console for the OTP.'
                   : <>Enter the 6-digit OTP sent to <strong>{OFFICIAL_EMAIL}</strong></>}
               </p>
               {countdown > 0 && (
-                <div style={{ fontSize:'0.78rem', color: countdown < 60 ? '#e53e3e' : '#888' }}>
+                <div style={{ fontSize: '0.78rem', color: countdown < 60 ? '#e53e3e' : '#888' }}>
                   Expires in {fmtTime(countdown)}
                 </div>
               )}
               {countdown === 0 && (
-                <div style={{ fontSize:'0.78rem', color:'#e53e3e' }}>OTP expired. <button style={{ background:'none',border:'none',color:'#0e0e0e',textDecoration:'underline',cursor:'pointer',fontSize:'0.78rem' }} onClick={() => { setStep(1); setOtp(['','','','','','']); setErr(''); setSuccess('') }}>Resend</button></div>
+                <div style={{ fontSize: '0.78rem', color: '#e53e3e' }}>OTP expired. <button style={{ background: 'none', border: 'none', color: '#0e0e0e', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.78rem' }} onClick={() => { setStep(1); setOtp(['', '', '', '', '', '']); setErr(''); setSuccess('') }}>Resend</button></div>
               )}
             </div>
 
-            {success && <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'0.5rem 0.75rem', fontSize:'0.8rem', color:'#15803d', marginBottom:'1rem', textAlign:'center' }}>{success}</div>}
+            {success && <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.5rem 0.75rem', fontSize: '0.8rem', color: '#15803d', marginBottom: '1rem', textAlign: 'center' }}>{success}</div>}
 
             {/* OTP digit boxes */}
-            <div style={{ display:'flex', gap:'0.5rem', justifyContent:'center', marginBottom:'1.25rem' }} onPaste={handleOtpPaste}>
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '1.25rem' }} onPaste={handleOtpPaste}>
               {otp.map((digit, idx) => (
                 <input
                   key={idx}
@@ -240,21 +244,21 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
                   onChange={e => handleOtpChange(idx, e.target.value)}
                   onKeyDown={e => handleOtpKey(idx, e)}
                   style={{
-                    width:52, height:60, textAlign:'center', fontSize:'1.6rem', fontWeight:700,
+                    width: 52, height: 60, textAlign: 'center', fontSize: '1.6rem', fontWeight: 700,
                     border: `2px solid ${digit ? '#0e0e0e' : '#e0ddd8'}`,
-                    borderRadius:10, outline:'none', background:'#fafafa',
-                    fontFamily:'monospace', transition:'border-color 0.15s'
+                    borderRadius: 10, outline: 'none', background: '#fafafa',
+                    fontFamily: 'monospace', transition: 'border-color 0.15s'
                   }}
                 />
               ))}
             </div>
 
-            {err && <p style={{ ...s.errText, textAlign:'center', marginBottom:'0.75rem' }}>{err}</p>}
-            <button onClick={handleVerifyOTP} disabled={loading || countdown === 0} style={{ ...s.loginBtn, width:'100%' }}>
+            {err && <p style={{ ...s.errText, textAlign: 'center', marginBottom: '0.75rem' }}>{err}</p>}
+            <button onClick={handleVerifyOTP} disabled={loading || countdown === 0} style={{ ...s.loginBtn, width: '100%' }}>
               {loading ? 'Verifying…' : 'Verify OTP →'}
             </button>
-            <button onClick={() => { setStep(1); setOtp(['','','','','','']); setErr(''); setSuccess('') }}
-              style={{ width:'100%', background:'none', border:'none', color:'#aaa', marginTop:'0.65rem', padding:'0.5rem', cursor:'pointer', fontSize:'0.82rem' }}>
+            <button onClick={() => { setStep(1); setOtp(['', '', '', '', '', '']); setErr(''); setSuccess('') }}
+              style={{ width: '100%', background: 'none', border: 'none', color: '#aaa', marginTop: '0.65rem', padding: '0.5rem', cursor: 'pointer', fontSize: '0.82rem' }}>
               ← Go back
             </button>
           </>
@@ -263,13 +267,13 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
         {/* ─── STEP 3: New Password ─────────────────────── */}
         {step === 3 && (
           <>
-            <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
-              <div style={{ fontSize:'2.5rem', marginBottom:'0.5rem' }}>🔐</div>
-              <p style={{ color:'#555', fontSize:'0.88rem', lineHeight:1.7, margin:0 }}>Identity verified! Set your new admin password.</p>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🔐</div>
+              <p style={{ color: '#555', fontSize: '0.88rem', lineHeight: 1.7, margin: 0 }}>Identity verified! Set your new admin password.</p>
             </div>
 
             {success && (
-              <div style={{ background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:8, padding:'0.75rem 1rem', fontSize:'0.88rem', color:'#15803d', marginBottom:'1rem', textAlign:'center', fontWeight:600 }}>
+              <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '0.75rem 1rem', fontSize: '0.88rem', color: '#15803d', marginBottom: '1rem', textAlign: 'center', fontWeight: 600 }}>
                 ✓ {success}
               </div>
             )}
@@ -291,34 +295,34 @@ function ForgotPasswordModal({ onClose, onPasswordReset }) {
                     </button>
                   </div>
                 </div>
-                <div style={{ ...s.field, marginTop:'0.75rem' }}>
+                <div style={{ ...s.field, marginTop: '0.75rem' }}>
                   <label style={s.label}>Confirm Password</label>
                   <input
                     type={showPwd ? 'text' : 'password'}
                     value={confirmPwd}
                     onChange={e => { setConfirmPwd(e.target.value); setErr('') }}
                     placeholder="Re-enter password"
-                    style={{ ...s.pwdInput, ...(err ? s.pwdInputErr : {}), boxSizing:'border-box' }}
+                    style={{ ...s.pwdInput, ...(err ? s.pwdInputErr : {}), boxSizing: 'border-box' }}
                   />
                 </div>
-                {err && <p style={{ ...s.errText, marginTop:'0.5rem' }}>{err}</p>}
+                {err && <p style={{ ...s.errText, marginTop: '0.5rem' }}>{err}</p>}
 
                 {/* Password strength bar */}
                 {newPwd && (() => {
                   const score = [newPwd.length >= 8, /[A-Z]/.test(newPwd), /[0-9]/.test(newPwd), /[^\w]/.test(newPwd)].filter(Boolean).length
-                  const colors = ['#ef4444','#f59e0b','#22c55e','#22c55e']
-                  const labels = ['Weak','Fair','Good','Strong']
+                  const colors = ['#ef4444', '#f59e0b', '#22c55e', '#22c55e']
+                  const labels = ['Weak', 'Fair', 'Good', 'Strong']
                   return (
-                    <div style={{ marginTop:'0.75rem' }}>
-                      <div style={{ display:'flex', gap:'3px', marginBottom:'0.3rem' }}>
-                        {[1,2,3,4].map(i => <div key={i} style={{ flex:1, height:4, borderRadius:2, background: i <= score ? colors[score-1] : '#e0ddd8', transition:'background 0.2s' }} />)}
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <div style={{ display: 'flex', gap: '3px', marginBottom: '0.3rem' }}>
+                        {[1, 2, 3, 4].map(i => <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= score ? colors[score - 1] : '#e0ddd8', transition: 'background 0.2s' }} />)}
                       </div>
-                      <div style={{ fontSize:'0.7rem', color: colors[score-1] }}>{labels[score-1]}</div>
+                      <div style={{ fontSize: '0.7rem', color: colors[score - 1] }}>{labels[score - 1]}</div>
                     </div>
                   )
                 })()}
 
-                <button onClick={handleReset} disabled={loading} style={{ ...s.loginBtn, width:'100%', marginTop:'1.5rem' }}>
+                <button onClick={handleReset} disabled={loading} style={{ ...s.loginBtn, width: '100%', marginTop: '1.5rem' }}>
                   {loading ? 'Saving…' : '✓ Set New Password'}
                 </button>
               </>
@@ -529,6 +533,12 @@ function ProductFormPage({ editing, initialData, ownerPwd, onSaved, onCancel, sh
       : [...form.sizes, size])
   }
 
+  function toggleShoeSize(size) {
+    set('sizes', form.sizes.includes(size)
+      ? form.sizes.filter(s => s !== size)
+      : [...form.sizes, size])
+  }
+
   // Called by ImageUploader when user stages new files
   function handleStagedFiles(files) {
     setUploadErr(null)
@@ -543,7 +553,7 @@ function ProductFormPage({ editing, initialData, ownerPwd, onSaved, onCancel, sh
   async function handleSubmit(status) {
     // Validation
     if (!form.name.trim()) { showMsg('error', 'Product name is required.'); return }
-    if (!form.price)        { showMsg('error', 'Price is required.');        return }
+    if (!form.price) { showMsg('error', 'Price is required.'); return }
 
     const hasStagedFiles = form._stagedFiles.length > 0
     const hasExistingUrls = form.images.length > 0
@@ -577,24 +587,24 @@ function ProductFormPage({ editing, initialData, ownerPwd, onSaved, onCancel, sh
 
     // Step 2: Build product payload
     const payload = {
-      name:          form.name.trim(),
-      category:      form.category,
-      subcategory:   form.subcategory.trim(),
-      brand:         form.brand.trim() || 'Aryan Designer Studio',
-      sku:           form.sku.trim(),
-      price:         Number(form.price),
+      name: form.name.trim(),
+      category: form.category,
+      subcategory: form.subcategory.trim(),
+      brand: form.brand.trim() || 'Aryan Designer Studio',
+      sku: form.sku.trim(),
+      price: Number(form.price),
       discountPrice: form.discountPrice ? Number(form.discountPrice) : null,
-      stock:         form.stock !== '' ? Number(form.stock) : 0,
-      description:   form.description.trim(),
-      sizes:         form.sizes,
-      colors:        form.colors,
-      tags:          form.tags,
-      featured:      form.featured,
-      newArrival:    form.newArrival,
-      bestSeller:    form.bestSeller,
+      stock: form.stock !== '' ? Number(form.stock) : 0,
+      description: form.description.trim(),
+      sizes: form.sizes,
+      colors: form.colors,
+      tags: form.tags,
+      featured: form.featured,
+      newArrival: form.newArrival,
+      bestSeller: form.bestSeller,
       status,
-      images:        finalImageUrls,
-      fabric:        form.fabric.trim(),
+      images: finalImageUrls,
+      fabric: form.fabric.trim(),
     }
 
     // Step 3: Save to backend
@@ -749,6 +759,21 @@ function ProductFormPage({ editing, initialData, ownerPwd, onSaved, onCancel, sh
                   </button>
                 ))}
               </div>
+
+              <div style={s.sizePills}>
+                {SHOE_SIZES.map(sz => (
+                  <button
+                    key={sz} type="button"
+                    onClick={() => toggleShoeSize(sz)}
+                    style={{
+                      ...s.sizePill,
+                      ...(form.sizes.includes(sz) ? s.sizePillActive : {}),
+                    }}
+                  >
+                    {sz}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div style={s.field}>
@@ -813,9 +838,9 @@ function ProductFormPage({ editing, initialData, ownerPwd, onSaved, onCancel, sh
           {/* Marketing */}
           <Section icon={<FaFire />} title="Marketing">
             {[
-              { key: 'featured',   label: 'Featured Product', sub: 'Shown in homepage featured section', color: '#c8a96e' },
-              { key: 'newArrival', label: 'New Arrival',       sub: 'Shows "New" badge on product card',   color: '#3b82f6' },
-              { key: 'bestSeller', label: 'Best Seller',       sub: 'Shows "Best Seller" badge',           color: '#f59e0b' },
+              { key: 'featured', label: 'Featured Product', sub: 'Shown in homepage featured section', color: '#c8a96e' },
+              { key: 'newArrival', label: 'New Arrival', sub: 'Shows "New" badge on product card', color: '#3b82f6' },
+              { key: 'bestSeller', label: 'Best Seller', sub: 'Shows "Best Seller" badge', color: '#f59e0b' },
             ].map(({ key, label, sub, color }) => (
               <label key={key} style={s.toggleRow}>
                 <Toggle
@@ -919,14 +944,14 @@ function GridView({ products, onEdit, onDelete }) {
               <div style={s.gridCardPriceRow}>
                 {p.discountPrice
                   ? <>
-                      <span className="adm-grid-card-price" style={{ ...s.gridCardPrice, color: '#0e0e0e' }}>
-                        ₹{Number(p.discountPrice).toLocaleString('en-IN')}
-                      </span>
-                      <span style={s.gridCardOriginalPrice}>₹{Number(p.price).toLocaleString('en-IN')}</span>
-                    </>
-                  : <span className="adm-grid-card-price" style={s.gridCardPrice}>
-                      ₹{Number(p.price).toLocaleString('en-IN')}
+                    <span className="adm-grid-card-price" style={{ ...s.gridCardPrice, color: '#0e0e0e' }}>
+                      ₹{Number(p.discountPrice).toLocaleString('en-IN')}
                     </span>
+                    <span style={s.gridCardOriginalPrice}>₹{Number(p.price).toLocaleString('en-IN')}</span>
+                  </>
+                  : <span className="adm-grid-card-price" style={s.gridCardPrice}>
+                    ₹{Number(p.price).toLocaleString('en-IN')}
+                  </span>
                 }
               </div>
               <div style={s.gridCardMeta}>
@@ -991,11 +1016,11 @@ function TableView({ products, onEdit, onDelete }) {
                 <td style={s.td}>
                   {p.discountPrice
                     ? <div>
-                        <div style={{ fontWeight: 700 }}>₹{Number(p.discountPrice).toLocaleString('en-IN')}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#999', textDecoration: 'line-through' }}>
-                          ₹{Number(p.price).toLocaleString('en-IN')}
-                        </div>
+                      <div style={{ fontWeight: 700 }}>₹{Number(p.discountPrice).toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#999', textDecoration: 'line-through' }}>
+                        ₹{Number(p.price).toLocaleString('en-IN')}
                       </div>
+                    </div>
                     : <span style={{ fontWeight: 700 }}>₹{Number(p.price).toLocaleString('en-IN')}</span>
                   }
                 </td>
@@ -1211,7 +1236,7 @@ export default function Admin() {
     return (
       <div className="adm-dash" style={s.dashRoot}>
         <ResponsiveCss />
-        <Sidebar activeTab="products" setActiveTab={() => {}} />
+        <Sidebar activeTab="products" setActiveTab={() => { }} />
         <div className="adm-main" style={s.mainArea}>
           <Toast msg={msg} />
           <ProductFormPage

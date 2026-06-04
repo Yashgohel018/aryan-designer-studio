@@ -10,16 +10,14 @@ import { FaTrophy, FaTruck, FaWhatsapp } from 'react-icons/fa'
 
 const CATEGORIES = [
   { label: 'Shirts', icon: <GiShirt />, cat: 'Shirts' },
-  { label: 'T-Shirts', icon: <GiTShirt />, cat: 'T-Shirts' },
   { label: 'Pants', icon: <GiArmoredPants />, cat: 'Pants' },
   { label: 'Formal Sets', icon: <GiTie />, cat: 'Formal Sets' },
   { label: 'Shirt & Pant', icon: <GiClothes />, cat: 'Shirt & Pant Sets' },
-  { label: 'T-Shirt Sets', icon: <MdOutlineCheckroom />, cat: 'T-Shirt Sets' },
+  { label: 'T-Shirts', icon: <GiTShirt />, cat: 'T-Shirts' },
   { label: 'Belts', icon: <GiBelt />, cat: 'Belts' },
   { label: 'Shoes', icon: <GiRunningShoe />, cat: 'Branded Shoes' },
   { label: 'Watches', icon: <GiWatch />, cat: 'Watches' },
   { label: 'Formal Shirts & Pants', icon: <GiSuitcase />, cat: 'Formal Shirts & Pants' },
-  { label: 'Underwear', icon: <GiUnderwear />, cat: 'Underwear' },
 ]
 
 function ProductCard({ p }) {
@@ -68,8 +66,8 @@ export default function Home() {
         <div className="hero-eyebrow">Men's Collection</div>
         <h1>Dress Sharp.<br /><em>Live Bold.</em></h1>
         <p className="hero-sub">
-          Premium men's fashion crafted with precision.<br />
-          Elevate your wardrobe today.
+          Premium men's fashion Readymade and crafted with precision.<br />
+          Elevate your style today.
         </p>
         <div className="hero-actions">
           <Link to="/products" className="btn btn-gold btn-lg">Shop Collection</Link>
@@ -109,7 +107,7 @@ export default function Home() {
           </div>
           {featured.length === 0 ? (
             <p className="text-muted text-center" style={{ padding: '3rem 0' }}>
-              No products yet. Add some from the <Link to="/admin" style={{ color: 'var(--gold)' }}>Admin Panel</Link>.
+              No products yet.
             </p>
           ) : (
             <div className="products-grid">
