@@ -26,7 +26,10 @@ export default function Cart() {
   function changeQty(idx, delta) {
     setItems(prev => {
       const copy = [...prev]
-      copy[idx] = { ...copy[idx], quantity: Math.max(1, copy[idx].quantity + delta) }
+      const item = copy[idx]
+      const stock = item.stock ?? Infinity
+      const newQty = Math.max(1, Math.min(stock, item.quantity + delta))
+      copy[idx] = { ...item, quantity: newQty }
       return copy
     })
   }
@@ -75,16 +78,25 @@ export default function Cart() {
               {items.map((it, idx) => (
                 <div className="cart-item" key={idx}>
                   {(it.image || productImages[it.id]) && (
-                    <img className="cart-item-img" src={it.image || productImages[it.id]} alt={it.name} />
+                    <Link to={`/product/${it.id}`}>
+                      <img className="cart-item-img" src={it.image || productImages[it.id]} alt={it.name} />
+                    </Link>
                   )}
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="cart-item-name">{it.name}</div>
+                    <Link to={`/product/${it.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <div className="cart-item-name" style={{ cursor: 'pointer' }}>{it.name}</div>
+                    </Link>
                     <div className="cart-item-meta">Size: {it.size}</div>
                     <div className="cart-item-price">₹{(it.price * it.quantity).toLocaleString('en-IN')}</div>
                     <div className="qty-control">
                       <button className="qty-btn" onClick={() => changeQty(idx, -1)}>−</button>
                       <span className="qty-num">{it.quantity}</span>
-                      <button className="qty-btn" onClick={() => changeQty(idx, 1)}>+</button>
+                      <button
+                        className="qty-btn"
+                        onClick={() => changeQty(idx, 1)}
+                        disabled={it.stock != null && it.quantity >= it.stock}
+                        title={it.stock != null && it.quantity >= it.stock ? 'Maximum stock reached' : ''}
+                      >+</button>
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>

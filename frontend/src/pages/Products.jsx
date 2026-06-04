@@ -46,7 +46,7 @@ export default function Products() {
     const cart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
     const found = cart.find(i => i.id === p.id && i.size === 'M')
     if (found) found.quantity += 1
-    else cart.push({ id: p.id, name: p.name, price: p.discountPrice || p.price, quantity: 1, size: 'M', image: p.thumbnail || p.images?.[0] })
+    else cart.push({ id: p.id, name: p.name, price: p.discountPrice || p.price, quantity: 1, size: 'M', image: p.thumbnail || p.images?.[0], stock: p.stock ?? null })
     localStorage.setItem('ads_cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('storage'))
   }

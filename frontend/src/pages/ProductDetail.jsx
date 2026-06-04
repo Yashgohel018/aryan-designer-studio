@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { getProducts } from '../lib/productStore'
-import { FaSpinner, FaTruck, FaWhatsapp, FaTrophy, FaStar, FaFire, FaCheckCircle, FaChevronLeft, FaChevronRight } from 'react-icons/fa'
+import { FaSpinner, FaTruck, FaWhatsapp, FaTrophy, FaStar, FaFire, FaCheckCircle, FaChevronLeft, FaChevronRight, FaArrowLeft } from 'react-icons/fa'
 import { GiSewingNeedle } from 'react-icons/gi'
 
 export default function ProductDetail() {
@@ -71,6 +71,7 @@ export default function ProductDetail() {
       size: selectedSize || 'M',
       color: selectedColor || '',
       image: prod.thumbnail || prod.images?.[0],
+      stock: prod.stock ?? null,
     })
     localStorage.setItem('ads_cart', JSON.stringify(cart))
     window.dispatchEvent(new Event('storage'))
@@ -102,13 +103,14 @@ export default function ProductDetail() {
 
   return (
     <div className="container product-detail-page">
-      {/* Breadcrumb */}
-      <nav style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '2rem', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-        <Link to="/">Home</Link> <span>/</span>
-        <Link to="/products">Shop</Link> <span>/</span>
-        {prod.category && <><Link to={`/products?cat=${prod.category}`}>{prod.category}</Link> <span>/</span></>}
-        <span style={{ color: 'var(--black)' }}>{prod.name}</span>
-      </nav>
+      {/* Back button */}
+      <button
+        className="btn btn-dark"
+        onClick={() => navigate(-1)}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}
+      >
+        <FaArrowLeft /> Back
+      </button>
 
       <div className="product-detail-grid">
         {/* Gallery */}
