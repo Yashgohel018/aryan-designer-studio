@@ -27,6 +27,16 @@ export default function Products() {
   // Reset page on filter/search change
   useEffect(() => { setPage(1) }, [activeCategory, query])
 
+  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+
+  useEffect(() => {
+    function handleStorage() {
+      setCart(JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
   function setCategory(cat) {
     if (cat === 'All') setSearchParams({})
     else setSearchParams({ cat })
@@ -43,11 +53,17 @@ export default function Products() {
     e.preventDefault()
     const outOfStock = p.stock === 0 || p.soldOut
     if (outOfStock) { alert('This item is sold out.'); return }
-    const cart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
-    const found = cart.find(i => i.id === p.id && i.size === 'M')
-    if (found) found.quantity += 1
-    else cart.push({ id: p.id, name: p.name, price: p.discountPrice || p.price, quantity: 1, size: 'M', image: p.thumbnail || p.images?.[0], stock: p.stock ?? null })
-    localStorage.setItem('ads_cart', JSON.stringify(cart))
+    const currentCart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
+    const found = currentCart.find(i => i.id === p.id && i.size === 'M')
+    if (found) {
+      if (p.stock !== undefined && p.stock !== null && found.quantity >= p.stock) {
+        alert(`Cannot add more. Only ${p.stock} item(s) in stock.`);
+        return
+      }
+      found.quantity += 1
+    }
+    else currentCart.push({ id: p.id, name: p.name, price: p.discountPrice || p.price, quantity: 1, size: 'M', image: p.thumbnail || p.images?.[0], stock: p.stock ?? null })
+    localStorage.setItem('ads_cart', JSON.stringify(currentCart))
     window.dispatchEvent(new Event('storage'))
   }
 
@@ -118,15 +134,25 @@ export default function Products() {
                     {!outOfStock && p.newArrival && <span className="new-badge">New</span>}
                     {!outOfStock && p.bestSeller && <span className="bestseller-badge"><FaFire style={{ fontSize: '0.6rem' }} /> Best Seller</span>}
 
-                    <div className="quick-add-overlay">
-                      <button
-                        className="quick-add-btn"
-                        onClick={e => addToCart(e, p)}
-                        disabled={outOfStock}
-                      >
-                        {outOfStock ? 'Out of Stock' : '+ Add to Cart'}
-                      </button>
-                    </div>
+                    {(() => {
+                      const cartItem = cart.find(i => i.id === p.id && i.size === 'M')
+                      const isMaxStock = cartItem && p.stock !== undefined && p.stock !== null && cartItem.quantity >= p.stock
+                      const btnDisabled = outOfStock || isMaxStock
+                      const btnText = outOfStock ? 'Out of Stock' : isMaxStock ? 'Limit Reached' : '+ Add to Cart'
+
+                      return (
+                        <div className="quick-add-overlay">
+                          <button
+                            className="quick-add-btn"
+                            onClick={e => addToCart(e, p)}
+                            disabled={btnDisabled}
+                            style={isMaxStock ? { background: 'rgba(0,0,0,0.6)', cursor: 'not-allowed' } : {}}
+                          >
+                            {btnText}
+                          </button>
+                        </div>
+                      )
+                    })()}
                   </div>
                   <div className="product-card-body">
                     {p.category && <div className="product-card-category">{p.category}</div>}

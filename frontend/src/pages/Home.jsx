@@ -21,24 +21,54 @@ const CATEGORIES = [
 ]
 
 function ProductCard({ p }) {
+  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+
+  useEffect(() => {
+    function handleStorage() {
+      setCart(JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
+
   function addToCart(e) {
     e.preventDefault()
-    if (p.soldOut) { alert('This item is sold out.'); return }
-    const cart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
-    const found = cart.find(i => i.id === p.id && i.size === 'M')
-    if (found) found.quantity += 1
-    else cart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, size: 'M', image: p.images?.[0], stock: p.stock ?? null })
-    localStorage.setItem('ads_cart', JSON.stringify(cart))
+    const outOfStock = p.stock === 0 || p.soldOut
+    if (outOfStock) { alert('This item is sold out.'); return }
+    const currentCart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
+    const found = currentCart.find(i => i.id === p.id && i.size === 'M')
+    if (found) {
+      if (p.stock !== undefined && p.stock !== null && found.quantity >= p.stock) {
+        alert(`Cannot add more. Only ${p.stock} item(s) in stock.`);
+        return
+      }
+      found.quantity += 1
+    } else {
+      currentCart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, size: 'M', image: p.images?.[0], stock: p.stock ?? null })
+    }
+    localStorage.setItem('ads_cart', JSON.stringify(currentCart))
     window.dispatchEvent(new Event('storage'))
   }
+
+  const outOfStock = p.stock === 0 || p.soldOut
+  const cartItem = cart.find(i => i.id === p.id && i.size === 'M')
+  const isMaxStock = cartItem && p.stock !== undefined && p.stock !== null && cartItem.quantity >= p.stock
+  const btnDisabled = outOfStock || isMaxStock
+  const btnText = outOfStock ? 'Sold Out' : isMaxStock ? 'Limit Reached' : '+ Add to Cart'
+
   return (
     <Link to={`/product/${p.id}`} className="product-card" style={{ display: 'block' }}>
       <div className="product-card-img">
         <img loading="lazy" src={p.images?.[0]} alt={p.name} />
-        {p.soldOut && <span className="sold-out-badge">Sold Out</span>}
+        {outOfStock && <span className="sold-out-badge">Sold Out</span>}
         <div className="quick-add-overlay">
-          <button className="quick-add-btn" onClick={addToCart} disabled={p.soldOut}>
-            {p.soldOut ? 'Sold Out' : '+ Add to Cart'}
+          <button
+            className="quick-add-btn"
+            onClick={addToCart}
+            disabled={btnDisabled}
+            style={isMaxStock ? { background: 'rgba(0,0,0,0.6)', cursor: 'not-allowed' } : {}}
+          >
+            {btnText}
           </button>
         </div>
       </div>

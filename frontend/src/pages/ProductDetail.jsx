@@ -12,6 +12,15 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [added, setAdded] = useState(false)
+  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+
+  useEffect(() => {
+    function handleStorage() {
+      setCart(JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+    }
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [])
 
   useEffect(() => {
     getProducts().then(list => {
@@ -59,21 +68,28 @@ export default function ProductDetail() {
     const outOfStock = prod.stock === 0 || prod.soldOut
     if (outOfStock) return
 
-    const cart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
+    const currentCart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
     const effectivePrice = prod.discountPrice || prod.price
-    const found = cart.find(i => i.id === prod.id && i.size === (selectedSize || 'M'))
-    if (found) found.quantity += 1
-    else cart.push({
-      id: prod.id,
-      name: prod.name,
-      price: effectivePrice,
-      quantity: 1,
-      size: selectedSize || 'M',
-      color: selectedColor || '',
-      image: prod.thumbnail || prod.images?.[0],
-      stock: prod.stock ?? null,
-    })
-    localStorage.setItem('ads_cart', JSON.stringify(cart))
+    const found = currentCart.find(i => i.id === prod.id && i.size === (selectedSize || 'M'))
+    if (found) {
+      if (prod.stock !== undefined && prod.stock !== null && found.quantity >= prod.stock) {
+        alert(`Cannot add more. Only ${prod.stock} item(s) in stock.`);
+        return
+      }
+      found.quantity += 1
+    } else {
+      currentCart.push({
+        id: prod.id,
+        name: prod.name,
+        price: effectivePrice,
+        quantity: 1,
+        size: selectedSize || 'M',
+        color: selectedColor || '',
+        image: prod.thumbnail || prod.images?.[0],
+        stock: prod.stock ?? null,
+      })
+    }
+    localStorage.setItem('ads_cart', JSON.stringify(currentCart))
     window.dispatchEvent(new Event('storage'))
     setAdded(true)
     setTimeout(() => setAdded(false), 2200)
@@ -89,10 +105,20 @@ export default function ProductDetail() {
   }
 
   const outOfStock = prod.stock === 0 || prod.soldOut
+  const cartItem = prod ? cart.find(i => i.id === prod.id && i.size === (selectedSize || 'M')) : null
+  const isMaxStock = cartItem && prod && prod.stock !== undefined && prod.stock !== null && cartItem.quantity >= prod.stock
   const effectivePrice = prod.discountPrice || prod.price
   const discount = prod.discountPrice && prod.price
     ? Math.round(((prod.price - prod.discountPrice) / prod.price) * 100)
     : null
+
+  const handleBack = () => {
+    if (!window.history.state || !window.history.state.idx || window.history.state.idx === 0) {
+      navigate('/products')
+    } else {
+      navigate(-1)
+    }
+  }
 
   // Sizes to show (from new schema or fallback)
   const availableSizes = prod.sizes?.length > 0
@@ -106,7 +132,7 @@ export default function ProductDetail() {
       {/* Back button */}
       <button
         className="btn btn-dark"
-        onClick={() => navigate(-1)}
+        onClick={handleBack}
         style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', marginBottom: '1.5rem', fontSize: '0.85rem' }}
       >
         <FaArrowLeft /> Back
@@ -264,6 +290,8 @@ export default function ProductDetail() {
           <div className="pd-actions">
             {outOfStock ? (
               <button className="btn btn-ghost" disabled>Out of Stock</button>
+            ) : isMaxStock ? (
+              <button className="btn btn-ghost" disabled style={{ cursor: 'not-allowed' }}>Limit Reached</button>
             ) : (
               <button
                 className="btn btn-dark btn-lg"
