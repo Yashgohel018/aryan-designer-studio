@@ -20,3 +20,9 @@ Thumbs.db
 # Logs
 npm-debug.log*
 *.log
+
+# ── Live product database ──────────────────────────────────────────────────────
+# This file is the admin's live product database.
+# It is written to by the server at runtime and must NEVER be overwritten by Git.
+# On first deploy, the server starts with an empty [] if the file doesn't exist.
+backend/data/products.json
