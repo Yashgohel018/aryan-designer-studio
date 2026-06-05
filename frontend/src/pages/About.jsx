@@ -52,7 +52,7 @@ export default function About() {
             {[
               { num: '500+', label: 'Happy Customers' },
               { num: '100+', label: 'Unique Styles' },
-              { num: '11', label: 'Product Categories' },
+              { num: '9', label: 'Product Categories' },
               { num: '100%', label: 'Premium Quality' },
             ].map(s => (
               <div key={s.num} style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1.5rem' }}>
