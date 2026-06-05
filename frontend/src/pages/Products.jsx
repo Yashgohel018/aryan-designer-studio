@@ -11,6 +11,110 @@ const CATEGORIES = [
 
 const PAGE_SIZE = 30
 
+function ProductListCard({ p }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
+
+  // Get list of all valid images
+  const images = (() => {
+    const list = []
+    if (p.thumbnail) list.push(p.thumbnail)
+    if (p.images && Array.isArray(p.images)) {
+      p.images.forEach(img => {
+        if (img && !list.includes(img)) {
+          list.push(img)
+        }
+      })
+    }
+    return list
+  })()
+
+  useEffect(() => {
+    if (!isHovered || images.length <= 1) {
+      setCurrentImageIndex(0)
+      return
+    }
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % images.length)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isHovered, images])
+
+  const outOfStock = p.stock === 0 || p.soldOut
+  const effectivePrice = p.discountPrice || p.price
+  const displayImage = images[currentImageIndex] || p.thumbnail || p.images?.[0]
+
+  return (
+    <Link
+      to={`/product/${p.id}`}
+      className="product-card"
+      style={{ display: 'block' }}
+      onMouseEnter={() => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          setIsHovered(true)
+        }
+      }}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="product-card-img">
+        {displayImage && <img loading="lazy" src={displayImage} alt={p.name} />}
+        {outOfStock && <span className="sold-out-badge">Out of Stock</span>}
+        {!outOfStock && p.newArrival && <span className="new-badge">New</span>}
+        {!outOfStock && p.bestSeller && <span className="bestseller-badge"><FaFire style={{ fontSize: '0.6rem' }} /> Best Seller</span>}
+
+        {/* Hover Dots Indicators */}
+        {isHovered && images.length > 1 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '5px',
+            zIndex: 10,
+            background: 'rgba(0, 0, 0, 0.45)',
+            padding: '4px 8px',
+            borderRadius: '10px',
+            pointerEvents: 'none',
+          }}>
+            {images.map((_, idx) => (
+              <span
+                key={idx}
+                style={{
+                  width: '5px',
+                  height: '5px',
+                  borderRadius: '50%',
+                  backgroundColor: idx === currentImageIndex ? '#fff' : 'rgba(255, 255, 255, 0.4)',
+                  transition: 'background-color 0.2s ease',
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="product-card-body">
+        {p.category && <div className="product-card-category">{p.category}</div>}
+        <div className="product-card-name">{p.name}</div>
+        <div className="product-card-price-row">
+          <span className="product-card-price">
+            ₹{Number(effectivePrice).toLocaleString('en-IN')}
+          </span>
+          {p.discountPrice && p.price && (
+            <span className="product-card-original-price">
+              ₹{Number(p.price).toLocaleString('en-IN')}
+            </span>
+          )}
+        </div>
+        {outOfStock && (
+          <div className="product-card-stock-note">Out of stock</div>
+        )}
+      </div>
+    </Link>
+  )
+}
+
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [all, setAll] = useState([])
@@ -121,59 +225,9 @@ export default function Products() {
           </div>
         ) : (
           <div className="products-grid">
-            {list.map(p => {
-              const thumb = p.thumbnail || p.images?.[0]
-              const outOfStock = p.stock === 0 || p.soldOut
-              const effectivePrice = p.discountPrice || p.price
-
-              return (
-                <Link to={`/product/${p.id}`} key={p.id} className="product-card" style={{ display: 'block' }}>
-                  <div className="product-card-img">
-                    {thumb && <img loading="lazy" src={thumb} alt={p.name} />}
-                    {outOfStock && <span className="sold-out-badge">Out of Stock</span>}
-                    {!outOfStock && p.newArrival && <span className="new-badge">New</span>}
-                    {!outOfStock && p.bestSeller && <span className="bestseller-badge"><FaFire style={{ fontSize: '0.6rem' }} /> Best Seller</span>}
-
-                    {(() => {
-                      const cartItem = cart.find(i => i.id === p.id && i.size === 'M')
-                      const isMaxStock = cartItem && p.stock !== undefined && p.stock !== null && cartItem.quantity >= p.stock
-                      const btnDisabled = outOfStock || isMaxStock
-                      const btnText = outOfStock ? 'Out of Stock' : isMaxStock ? 'Limit Reached' : '+ Add to Cart'
-
-                      return (
-                        <div className="quick-add-overlay">
-                          <button
-                            className="quick-add-btn"
-                            onClick={e => addToCart(e, p)}
-                            disabled={btnDisabled}
-                            style={isMaxStock ? { background: 'rgba(0,0,0,0.6)', cursor: 'not-allowed' } : {}}
-                          >
-                            {btnText}
-                          </button>
-                        </div>
-                      )
-                    })()}
-                  </div>
-                  <div className="product-card-body">
-                    {p.category && <div className="product-card-category">{p.category}</div>}
-                    <div className="product-card-name">{p.name}</div>
-                    <div className="product-card-price-row">
-                      <span className="product-card-price">
-                        ₹{Number(effectivePrice).toLocaleString('en-IN')}
-                      </span>
-                      {p.discountPrice && p.price && (
-                        <span className="product-card-original-price">
-                          ₹{Number(p.price).toLocaleString('en-IN')}
-                        </span>
-                      )}
-                    </div>
-                    {outOfStock && (
-                      <div className="product-card-stock-note">Out of stock</div>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
+            {list.map(p => (
+              <ProductListCard key={p.id} p={p} />
+            ))}
           </div>
         )}
 

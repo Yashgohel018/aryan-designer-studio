@@ -12,7 +12,7 @@ export default function About() {
         const el = document.getElementById('story')
         if (el) {
           const navbarHeight = 70
-          const skipTopPadding = 72
+          const skipTopPadding = 10
           const y = el.getBoundingClientRect().top + window.scrollY - navbarHeight + skipTopPadding
           window.scrollTo({ top: y, behavior: 'smooth' })
         }
@@ -33,7 +33,7 @@ export default function About() {
       </div>
 
       {/* Story */}
-      <section id="story" style={{ padding: '2.5rem 0 5rem', background: 'var(--off-white)', scrollMarginTop: '70px' }}>
+      <section id="story" style={{ padding: '2.2rem 0 5rem', background: 'var(--off-white)', scrollMarginTop: '70px' }}>
         <div className="container about-story">
           <div>
             <span style={{ fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', fontWeight: 600 }}>Our Story</span>

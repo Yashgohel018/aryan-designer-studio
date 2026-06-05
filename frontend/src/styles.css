@@ -1563,7 +1563,7 @@ h3 {
 }
 
 .about-story {
-  padding: 6rem 0;
+  padding: 0 0 6rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 5rem;
@@ -2308,7 +2308,7 @@ h3 {
   .about-story {
     grid-template-columns: 1fr;
     gap: 2.5rem;
-    padding: 4rem 0;
+    padding: 0 0 4rem;
   }
 
   .about-values-grid {
