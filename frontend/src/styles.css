@@ -2453,6 +2453,11 @@ h3 {
     padding: 0 1rem;
   }
 
+  .product-detail-page {
+    padding-top: 1.5rem;
+    padding-bottom: 3rem;
+  }
+
   /* Header */
   .header-inner {
     padding: 0 1rem;
