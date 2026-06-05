@@ -2,22 +2,22 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getProducts } from '../lib/productStore'
 import {
-  GiShirt, GiTShirt, GiArmoredPants, GiTie, GiRunningShoe, GiWatch,
-  GiBelt, GiClothes, GiUnderwear, GiSuitcase,
+  GiShirt, GiArmoredPants, GiRunningShoe, GiWatch,
+  GiBelt, GiClothes, GiSuitcase,
 } from 'react-icons/gi'
 import { MdOutlineCheckroom } from 'react-icons/md'
-import { FaTrophy, FaTruck, FaWhatsapp } from 'react-icons/fa'
+import { FaTrophy, FaTruck, FaWhatsapp, FaTags } from 'react-icons/fa'
 
 const CATEGORIES = [
-  { label: 'Shirts', icon: <GiShirt />, cat: 'Shirts' },
-  { label: 'Pants', icon: <GiArmoredPants />, cat: 'Pants' },
-  { label: 'Formal Sets', icon: <GiTie />, cat: 'Formal Sets' },
-  { label: 'Shirt & Pant', icon: <GiClothes />, cat: 'Shirt & Pant Sets' },
-  { label: 'T-Shirts', icon: <GiTShirt />, cat: 'T-Shirts' },
-  { label: 'Belts', icon: <GiBelt />, cat: 'Belts' },
-  { label: 'Shoes', icon: <GiRunningShoe />, cat: 'Branded Shoes' },
-  { label: 'Watches', icon: <GiWatch />, cat: 'Watches' },
-  { label: 'Formal Shirts & Pants', icon: <GiSuitcase />, cat: 'Formal Shirts & Pants' },
+  { label: 'Shirts',                  icon: <GiShirt />,       cat: 'Shirts' },
+  { label: 'Pants',                   icon: <GiArmoredPants />, cat: 'Pants' },
+  { label: 'Formal Shirts & Pants',   icon: <GiSuitcase />,    cat: 'Formal Shirts & Pants Sets' },
+  { label: 'Shirt & Pant',            icon: <GiClothes />,     cat: 'Shirt & Pant Sets' },
+  { label: 'T-Shirt or Pant Sets',    icon: <MdOutlineCheckroom />, cat: 'T-Shirt or Pant Sets' },
+  { label: 'Belts',                   icon: <GiBelt />,        cat: 'Belts' },
+  { label: 'Shoes',                   icon: <GiRunningShoe />, cat: 'Branded Shoes' },
+  { label: 'Watches',                 icon: <GiWatch />,       cat: 'Watches' },
+  { label: 'Accessories',             icon: <FaTags />,        cat: 'Accessories' },
 ]
 
 function ProductCard({ p }) {

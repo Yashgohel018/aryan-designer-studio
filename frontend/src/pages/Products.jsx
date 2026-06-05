@@ -4,8 +4,8 @@ import { getProducts } from '../lib/productStore'
 import { FaSearch, FaStar, FaFire } from 'react-icons/fa'
 
 const CATEGORIES = [
-  'All', 'Shirts', 'Pants', 'T-Shirts', 'Formal Shirts & Pants',
-  'Shirt & Pant Sets', 'Formal Sets',
+  'All', 'Shirts', 'Pants', 'Formal Shirts & Pants Sets',
+  'Shirt & Pant Sets', 'T-Shirt or Pant Sets',
   'Belts', 'Branded Shoes', 'Watches', 'Accessories',
 ]
 

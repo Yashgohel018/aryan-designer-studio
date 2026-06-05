@@ -19,9 +19,9 @@ import { MdOutlineCheckroom } from 'react-icons/md'
 
 /* ── Constants ──────────────────────────────────────────────────────────── */
 const CATEGORIES = [
-  'Shirts', 'Pants', 'T-Shirts', 'Formal Shirts & Pants',
-  'Shirt & Pant Sets', 'Formal Sets', 'T-Shirt Sets',
-  'Belts', 'Branded Shoes', 'Watches', 'Underwear', 'Wedding', 'Ethnic Wear', 'Accessories',
+  'Shirts', 'Pants', 'Formal Shirts & Pants Sets',
+  'Shirt & Pant Sets', 'T-Shirt or Pant Sets',
+  'Belts', 'Branded Shoes', 'Watches', 'Accessories',
 ]
 
 const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', 'Free Size']
