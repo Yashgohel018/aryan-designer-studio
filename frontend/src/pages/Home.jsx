@@ -21,56 +21,84 @@ const CATEGORIES = [
 ]
 
 function ProductCard({ p }) {
-  const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
+
+  // Get list of all valid images
+  const images = (() => {
+    const list = []
+    if (p.thumbnail) list.push(p.thumbnail)
+    if (p.images && Array.isArray(p.images)) {
+      p.images.forEach(img => {
+        if (img && !list.includes(img)) {
+          list.push(img)
+        }
+      })
+    }
+    return list
+  })()
 
   useEffect(() => {
-    function handleStorage() {
-      setCart(JSON.parse(localStorage.getItem('ads_cart') || '[]'))
+    if (!isHovered || images.length <= 1) {
+      setCurrentImageIndex(0)
+      return
     }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [])
 
-  function addToCart(e) {
-    e.preventDefault()
-    const outOfStock = p.stock === 0 || p.soldOut
-    if (outOfStock) { alert('This item is sold out.'); return }
-    const currentCart = JSON.parse(localStorage.getItem('ads_cart') || '[]')
-    const found = currentCart.find(i => i.id === p.id && i.size === 'M')
-    if (found) {
-      if (p.stock !== undefined && p.stock !== null && found.quantity >= p.stock) {
-        alert(`Cannot add more. Only ${p.stock} item(s) in stock.`);
-        return
-      }
-      found.quantity += 1
-    } else {
-      currentCart.push({ id: p.id, name: p.name, price: p.price, quantity: 1, size: 'M', image: p.images?.[0], stock: p.stock ?? null })
-    }
-    localStorage.setItem('ads_cart', JSON.stringify(currentCart))
-    window.dispatchEvent(new Event('storage'))
-  }
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % images.length)
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [isHovered, images])
 
   const outOfStock = p.stock === 0 || p.soldOut
-  const cartItem = cart.find(i => i.id === p.id && i.size === 'M')
-  const isMaxStock = cartItem && p.stock !== undefined && p.stock !== null && cartItem.quantity >= p.stock
-  const btnDisabled = outOfStock || isMaxStock
-  const btnText = outOfStock ? 'Sold Out' : isMaxStock ? 'Limit Reached' : '+ Add to Cart'
+  const displayImage = images[currentImageIndex] || p.thumbnail || p.images?.[0]
 
   return (
-    <Link to={`/product/${p.id}`} className="product-card" style={{ display: 'block' }}>
+    <Link
+      to={`/product/${p.id}`}
+      className="product-card"
+      style={{ display: 'block' }}
+      onMouseEnter={() => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          setIsHovered(true)
+        }
+      }}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="product-card-img">
-        <img loading="lazy" src={p.images?.[0]} alt={p.name} />
+        {displayImage && <img loading="lazy" src={displayImage} alt={p.name} />}
         {outOfStock && <span className="sold-out-badge">Sold Out</span>}
-        <div className="quick-add-overlay">
-          <button
-            className="quick-add-btn"
-            onClick={addToCart}
-            disabled={btnDisabled}
-            style={isMaxStock ? { background: 'rgba(0,0,0,0.6)', cursor: 'not-allowed' } : {}}
-          >
-            {btnText}
-          </button>
-        </div>
+
+        {/* Hover Dots Indicators */}
+        {isHovered && images.length > 1 && (
+          <div style={{
+            position: 'absolute',
+            bottom: '12px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '5px',
+            zIndex: 10,
+            background: 'rgba(0, 0, 0, 0.45)',
+            padding: '4px 8px',
+            borderRadius: '10px',
+            pointerEvents: 'none',
+          }}>
+            {images.map((_, idx) => (
+              <span
+                key={idx}
+                style={{
+                  width: '5px',
+                  height: '5px',
+                  borderRadius: '50%',
+                  backgroundColor: idx === currentImageIndex ? '#fff' : 'rgba(255, 255, 255, 0.4)',
+                  transition: 'background-color 0.2s ease',
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <div className="product-card-body">
         {p.category && <div className="product-card-category">{p.category}</div>}
