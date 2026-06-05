@@ -1,7 +1,27 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { FaTrophy, FaWhatsapp, FaCut } from 'react-icons/fa'
 
 export default function About() {
+  const { hash } = useLocation()
+
+  useEffect(() => {
+    if (hash === '#story') {
+      // Small delay to let the page render fully before scrolling
+      setTimeout(() => {
+        const el = document.getElementById('story')
+        if (el) {
+          const navbarHeight = 70
+          const skipTopPadding = 72
+          const y = el.getBoundingClientRect().top + window.scrollY - navbarHeight + skipTopPadding
+          window.scrollTo({ top: y, behavior: 'smooth' })
+        }
+      }, 80)
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [hash])
+
   return (
     <>
       {/* Hero */}
@@ -13,18 +33,18 @@ export default function About() {
       </div>
 
       {/* Story */}
-      <section style={{ padding: '6rem 0', background: 'var(--off-white)' }}>
+      <section id="story" style={{ padding: '2.5rem 0 5rem', background: 'var(--off-white)', scrollMarginTop: '70px' }}>
         <div className="container about-story">
           <div>
             <span style={{ fontSize: '0.75rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--gold)', fontWeight: 600 }}>Our Story</span>
             <h2 style={{ marginTop: '0.75rem', marginBottom: '1.5rem' }}>Crafted for the Modern Man</h2>
             <p style={{ color: 'var(--muted)', lineHeight: 1.9, marginBottom: '1.25rem', fontSize: '0.95rem' }}>
-              Aryan Designer Studio was born from a simple belief — every man deserves to look and feel exceptional. 
-              Founded by Krish Gohel (Krrish Aryan), we design and curate premium men's clothing with an 
+              Aryan Designer Studio was born from a simple belief — every man deserves to look and feel exceptional.
+              Founded by Krish Gohel (Krrish Aryan), we design and curate premium men's clothing with an
               uncompromising eye for quality, fit, and detail.
             </p>
             <p style={{ color: 'var(--muted)', lineHeight: 1.9, fontSize: '0.95rem' }}>
-              From crisp formal shirts to relaxed casual tees, every piece in our collection is thoughtfully 
+              From crisp formal shirts to relaxed casual tees, every piece in our collection is thoughtfully
               chosen to help you dress with confidence — whether you're heading to the office or out on the town.
             </p>
           </div>

@@ -71,7 +71,7 @@ export default function Home() {
         </p>
         <div className="hero-actions">
           <Link to="/products" className="btn btn-gold btn-lg">Shop Collection</Link>
-          <Link to="/about" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}>Our Story</Link>
+          <Link to="/about#story" className="btn btn-outline btn-lg" style={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}>Our Story</Link>
         </div>
         <div className="hero-scroll-hint">Scroll</div>
       </section>
