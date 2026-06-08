@@ -28,7 +28,7 @@
   --shadow-lg: 0 16px 56px rgba(0, 0, 0, 0.15);
   --transition: 0.26s cubic-bezier(0.4, 0, 0.2, 1);
   --container: 1200px;
-  --header-height: 80px;
+  --header-height: 100px;
 }
 
 /* ── Reset ────────────────────────────────────────────────── */
@@ -157,7 +157,7 @@ h3 {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 0 2rem;
-  height: 80px;
+  height: 100px;
 }
 
 .header-left {
@@ -195,7 +195,7 @@ h3 {
 }
 
 .brand-logo {
-  height: 64px;
+  height: 80px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -345,8 +345,17 @@ h3 {
 }
 
 @media (max-width: 860px) {
+  :root {
+    --header-height: 80px;
+  }
+
   .header-inner {
     grid-template-columns: 1fr auto 1fr;
+    height: 80px;
+  }
+
+  .brand-logo {
+    height: 64px;
   }
 
   .header-left .nav {
@@ -3553,8 +3562,13 @@ h3 {
    SKELETON LOADING (shown during backend cold-start wakeup)
 ───────────────────────────────────────────────────────────── */
 @keyframes skeleton-shimmer {
-  0%   { background-position: -600px 0; }
-  100% { background-position:  600px 0; }
+  0% {
+    background-position: -600px 0;
+  }
+
+  100% {
+    background-position: 600px 0;
+  }
 }
 
 .skeleton-card {
@@ -3587,10 +3601,23 @@ h3 {
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
-.skeleton-line.short  { width: 50%; }
-.skeleton-line.medium { width: 75%; }
-.skeleton-line.full   { width: 100%; }
-.skeleton-line.price  { width: 40%; height: 14px; margin-top: 2px; }
+.skeleton-line.short {
+  width: 50%;
+}
+
+.skeleton-line.medium {
+  width: 75%;
+}
+
+.skeleton-line.full {
+  width: 100%;
+}
+
+.skeleton-line.price {
+  width: 40%;
+  height: 14px;
+  margin-top: 2px;
+}
 
 /* Waking-up notice shown after 5s of loading */
 .wakeup-notice {
@@ -3615,11 +3642,27 @@ h3 {
 }
 
 @keyframes wakeup-pulse {
-  0%, 100% { opacity: 1;   transform: scale(1);    }
-  50%       { opacity: 0.4; transform: scale(0.75); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.75);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
