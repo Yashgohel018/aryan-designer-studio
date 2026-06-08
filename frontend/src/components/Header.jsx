@@ -57,9 +57,15 @@ export default function Header() {
             </nav>
           </div>
 
-          {/* Center: brand */}
+          {/* Center: brand logo */}
           <div className="header-center">
-            <Link to="/" className="brand">Aryan Designer Studio</Link>
+            <Link to="/" className="brand-logo-link">
+              <img
+                src="/logo.png"
+                alt="Aryan Designer Studio"
+                className="brand-logo"
+              />
+            </Link>
           </div>
 
           {/* Right: cart */}
