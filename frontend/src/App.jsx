@@ -10,6 +10,7 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import Admin from './pages/Admin'
 import NoInternet from './pages/NoInternet'
+import { pingBackend } from './lib/productStore'
 
 /* Scrolls to the top of the page on every route change */
 function ScrollToTop() {
@@ -24,6 +25,9 @@ function ScrollToTop() {
  * Probe the backend API with a real HTTP request to verify actual connectivity.
  * navigator.onLine is NOT reliable for DevTools "Offline" throttling —
  * only a real fetch() will be blocked by it.
+ *
+ * Timeout raised to 60s: Render free-tier cold starts can take 30–60 s.
+ * We don't want to wrongly redirect to /offline during a normal wakeup.
  */
 async function isConnected() {
   try {
@@ -31,7 +35,7 @@ async function isConnected() {
     const res = await fetch('/api/products', {
       method: 'HEAD',
       cache: 'no-store',
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(60_000), // ← was 3 000 ms, now 60 s
     })
     return res.ok || res.status < 500
   } catch {
@@ -57,10 +61,57 @@ function OfflineGuard() {
   return null
 }
 
+// ── Keep-alive: ping the backend every 14 min while any tab is open ──────────
+// Render free tier sleeps after ~15 min of inactivity. This keeps it warm
+// as long as someone has the site open — no external service needed.
+const PING_INTERVAL_MS = 14 * 60 * 1000 // 14 minutes
+
+function useKeepAlive() {
+  useEffect(() => {
+    // Ping immediately on first load to start waking a cold server ASAP
+    pingBackend()
+
+    let intervalId = null
+
+    function startPinging() {
+      if (intervalId) return
+      intervalId = setInterval(pingBackend, PING_INTERVAL_MS)
+    }
+
+    function stopPinging() {
+      if (intervalId) {
+        clearInterval(intervalId)
+        intervalId = null
+      }
+    }
+
+    // Respect page visibility — no need to ping when tab is hidden
+    function handleVisibility() {
+      if (document.visibilityState === 'visible') {
+        pingBackend() // ping immediately on tab focus (could have been away for a while)
+        startPinging()
+      } else {
+        stopPinging()
+      }
+    }
+
+    startPinging()
+    document.addEventListener('visibilitychange', handleVisibility)
+
+    return () => {
+      stopPinging()
+      document.removeEventListener('visibilitychange', handleVisibility)
+    }
+  }, [])
+}
+
 export default function App() {
   const location = useLocation()
   const isAdmin = location.pathname === '/admin'
   const isOffline = location.pathname === '/offline'
+
+  // Keep the Render backend warm while anyone has the site open
+  useKeepAlive()
 
   if (isAdmin) {
     return <Admin />

@@ -11,6 +11,20 @@ const CATEGORIES = [
 
 const PAGE_SIZE = 30
 
+// ── Skeleton card shown while backend wakes up ───────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="skeleton-card">
+      <div className="skeleton-img" />
+      <div className="skeleton-body">
+        <div className="skeleton-line short" />
+        <div className="skeleton-line medium" />
+        <div className="skeleton-line price" />
+      </div>
+    </div>
+  )
+}
+
 function ProductListCard({ p }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
@@ -120,12 +134,24 @@ export default function Products() {
   const [all, setAll] = useState([])
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(1)
+  const [isLoading, setIsLoading] = useState(true)
+  const [slowLoad, setSlowLoad] = useState(false)
 
   const activeCategory = searchParams.get('cat') || 'All'
 
   useEffect(() => {
+    // After 5s show a gentle "server waking up" notice
+    const slowTimer = setTimeout(() => setSlowLoad(true), 5000)
+
     // getProducts() returns only status === 'active' products from the backend
-    getProducts().then(list => setAll(list))
+    getProducts().then(list => {
+      clearTimeout(slowTimer)
+      setAll(list)
+      setIsLoading(false)
+      setSlowLoad(false)
+    })
+
+    return () => clearTimeout(slowTimer)
   }, [])
 
   // Reset page on filter/search change
@@ -213,7 +239,20 @@ export default function Products() {
         </div>
 
         {/* Grid */}
-        {list.length === 0 ? (
+        {/* Slow-load wakeup notice */}
+        {isLoading && slowLoad && (
+          <div className="wakeup-notice">
+            <span className="wakeup-dot" />
+            Server is waking up, products loading shortly…
+          </div>
+        )}
+
+        {isLoading ? (
+          /* Skeleton grid while backend wakes up */
+          <div className="products-grid">
+            {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
+          </div>
+        ) : list.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--muted)' }}>
             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}><FaSearch /></div>
             <p>No products found{activeCategory !== 'All' ? ` in "${activeCategory}"` : ''}.</p>

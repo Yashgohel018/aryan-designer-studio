@@ -1,0 +1,34 @@
+# ── Render Backend Keep-Alive ─────────────────────────────────────────────────
+# Pings the backend every 14 minutes so Render's free tier never goes to sleep.
+# Runs 24/7 on GitHub's servers — no user needs to have the site open.
+# Free for public repos (unlimited minutes). Uses zero Vercel resources.
+
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Every 14 minutes, all day, every day
+    # Cron syntax: minute hour day-of-month month day-of-week
+    - cron: '*/14 * * * *'
+  # Also allow manual trigger from GitHub Actions tab (useful for testing)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping Render Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 2  # Safety net — job should finish in seconds
+
+    steps:
+      - name: Ping /api/ping
+        run: |
+          echo "⏰ Pinging backend at $(date -u)"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 60 \
+            "https://aryan-ds-backend.onrender.com/api/ping")
+          echo "📡 Response status: $STATUS"
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
+            echo "✅ Backend is awake!"
+          else
+            echo "⚠️  Backend returned status $STATUS — may still be waking up"
+          fi

@@ -579,6 +579,10 @@ app.post('/api/products', requireOwner, async (req, res) => {
 // ── Legacy helpers ─────────────────────────────────────────────────────────────
 // resetToDefault: not implemented on server
 
+// ── Keep-alive ping (called by the frontend every 14 min to prevent Render
+//    free-tier sleep; also useful as a general health-check endpoint) ──────────
+app.get('/api/ping', (_req, res) => res.json({ ok: true, ts: Date.now() }));
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   const cloudOk  = !!process.env.CLOUDINARY_CLOUD_NAME;

@@ -4,16 +4,37 @@
 const BASE = import.meta.env.VITE_API_URL || ''
 const API_URL = `${BASE}/api/products`
 
-// ── Read (public — active products only) ────────────────────────────────────
-export async function getProducts() {
+// ── Keep-alive ping (called by App.jsx every 14 min) ────────────────────────
+// Fire-and-forget — just wakes the Render free-tier server, no return value needed
+export async function pingBackend() {
   try {
-    const res = await fetch(API_URL)
-    if (!res.ok) throw new Error('Failed to fetch products')
-    return await res.json()
-  } catch (err) {
-    console.error(err)
-    return []
+    await fetch(`${BASE}/api/ping`, { cache: 'no-store' })
+  } catch { /* ignore — network may be offline */ }
+}
+
+// ── Read (public — active products only) ────────────────────────────────────
+// Retries up to MAX_RETRIES times with increasing delays so that products
+// appear automatically after a Render free-tier cold start (30–60 s wakeup).
+const RETRY_DELAYS_MS = [1_000, 5_000, 10_000, 15_000, 20_000] // ~51 s total window
+const MAX_RETRIES = RETRY_DELAYS_MS.length
+
+export async function getProducts() {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(API_URL, { cache: 'no-store' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      if (attempt === MAX_RETRIES) {
+        console.error('[getProducts] All retries exhausted:', err.message)
+        return []
+      }
+      const delay = RETRY_DELAYS_MS[attempt]
+      console.warn(`[getProducts] Attempt ${attempt + 1} failed. Retrying in ${delay / 1000}s…`)
+      await new Promise(r => setTimeout(r, delay))
+    }
   }
+  return []
 }
 
 // ── Read all products including drafts (admin) ───────────────────────────────
