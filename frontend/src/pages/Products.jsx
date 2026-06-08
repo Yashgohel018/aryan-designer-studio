@@ -157,6 +157,14 @@ export default function Products() {
   // Reset page on filter/search change
   useEffect(() => { setPage(1) }, [activeCategory, query])
 
+  // SEO: dynamic page title
+  useEffect(() => {
+    document.title = activeCategory === 'All'
+      ? 'Shop Men\'s Collection — Aryan Designer Studio'
+      : `${activeCategory} — Aryan Designer Studio`
+    return () => { document.title = 'Aryan Designer Studio' }
+  }, [activeCategory])
+
   const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('ads_cart') || '[]'))
 
   useEffect(() => {
@@ -224,8 +232,10 @@ export default function Products() {
         {/* Top bar */}
         <div className="shop-top-bar">
           <span className="shop-count">
-            {filtered.length} {filtered.length === 1 ? 'product' : 'products'}
-            {activeCategory !== 'All' && ` in ${activeCategory}`}
+            {isLoading
+              ? '…'
+              : `${filtered.length} ${filtered.length === 1 ? 'product' : 'products'}${activeCategory !== 'All' ? ` in ${activeCategory}` : ''}`
+            }
           </span>
           <div className="search-input-wrap">
             <span className="search-icon"><FaSearch /></span>

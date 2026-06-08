@@ -1,17 +1,53 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { getProducts } from '../lib/productStore'
-import { FaSpinner, FaTruck, FaWhatsapp, FaTrophy, FaStar, FaFire, FaCheckCircle, FaChevronLeft, FaChevronRight, FaArrowLeft } from 'react-icons/fa'
+import { getProductById } from '../lib/productStore'
+import { FaTruck, FaWhatsapp, FaTrophy, FaStar, FaFire, FaCheckCircle, FaChevronLeft, FaChevronRight, FaArrowLeft, FaShareAlt } from 'react-icons/fa'
 import { GiSewingNeedle } from 'react-icons/gi'
+
+// ── Skeleton for product detail layout ───────────────────────────────────────
+function ProductDetailSkeleton() {
+  return (
+    <div className="container product-detail-page">
+      <div className="skeleton-line short" style={{ height: 32, width: 80, marginBottom: '1.5rem', borderRadius: 6 }} />
+      <div className="product-detail-grid">
+        {/* Gallery skeleton */}
+        <div className="pd-gallery">
+          <div className="pd-main-img skeleton-img" style={{ borderRadius: 'var(--radius-lg)' }} />
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} className="skeleton-img" style={{ width: 72, height: 90, borderRadius: 'var(--radius)', flexShrink: 0 }} />
+            ))}
+          </div>
+        </div>
+        {/* Info skeleton */}
+        <div className="pd-info" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="skeleton-line short" style={{ width: '40%', height: 12 }} />
+          <div className="skeleton-line medium" style={{ width: '80%', height: 28 }} />
+          <div className="skeleton-line short" style={{ width: '30%', height: 22 }} />
+          <div className="skeleton-line full" style={{ height: 11 }} />
+          <div className="skeleton-line full" style={{ height: 11 }} />
+          <div className="skeleton-line medium" style={{ height: 11 }} />
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+            <div className="skeleton-img" style={{ width: '60%', height: 46, borderRadius: 6 }} />
+            <div className="skeleton-img" style={{ width: '35%', height: 46, borderRadius: 6 }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [prod, setProd] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [notFound, setNotFound] = useState(false)
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [added, setAdded] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [cart, setCart] = useState(() => JSON.parse(localStorage.getItem('ads_cart') || '[]'))
 
   useEffect(() => {
@@ -23,16 +59,25 @@ export default function ProductDetail() {
   }, [])
 
   useEffect(() => {
-    getProducts().then(list => {
-      const p = list.find(item => item.id === id)
+    setIsLoading(true)
+    setNotFound(false)
+    // Use direct /api/products/:id — much faster than fetching all products
+    getProductById(id).then(p => {
       if (p) {
         setProd(p)
         setSelectedIndex(0)
-        // Pre-select first size/color
         if (p.sizes?.length > 0) setSelectedSize(p.sizes[0])
         if (p.colors?.length > 0) setSelectedColor(p.colors[0])
+        // SEO: set page title to product name
+        document.title = `${p.name} — Aryan Designer Studio`
+      } else {
+        setNotFound(true)
+        document.title = 'Product Not Found — Aryan Designer Studio'
       }
+      setIsLoading(false)
     })
+    // Restore default title on unmount
+    return () => { document.title = 'Aryan Designer Studio' }
   }, [id])
 
   // Gallery navigation — wrap-around
@@ -73,7 +118,7 @@ export default function ProductDetail() {
     const found = currentCart.find(i => i.id === prod.id && i.size === (selectedSize || 'M'))
     if (found) {
       if (prod.stock !== undefined && prod.stock !== null && found.quantity >= prod.stock) {
-        alert(`Cannot add more. Only ${prod.stock} item(s) in stock.`);
+        alert(`Cannot add more. Only ${prod.stock} item(s) in stock.`)
         return
       }
       found.quantity += 1
@@ -95,11 +140,38 @@ export default function ProductDetail() {
     setTimeout(() => setAdded(false), 2200)
   }
 
-  if (!prod) {
+  // ── Share button ─────────────────────────────────────────────────────────
+  async function handleShare() {
+    const url = window.location.href
+    const title = prod?.name || 'Check out this product'
+    const text = `Check out ${title} at Aryan Designer Studio!`
+
+    if (navigator.share) {
+      // Native share (works great on mobile — opens WhatsApp, etc.)
+      try { await navigator.share({ title, text, url }) } catch { /* user cancelled */ }
+    } else {
+      // Desktop fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(url)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      } catch {
+        prompt('Copy this link:', url)
+      }
+    }
+  }
+
+  // ── Loading skeleton ─────────────────────────────────────────────────────
+  if (isLoading) return <ProductDetailSkeleton />
+
+  // ── Not found ────────────────────────────────────────────────────────────
+  if (notFound) {
     return (
       <div className="container" style={{ padding: '6rem 2rem', textAlign: 'center', color: 'var(--muted)' }}>
-        <div style={{ fontSize: '2.5rem', marginBottom: '1rem', color: 'var(--gold)' }}><FaSpinner /></div>
-        <p>Loading product…</p>
+        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+        <h2 style={{ fontFamily: 'var(--serif)', marginBottom: '0.75rem' }}>Product Not Found</h2>
+        <p style={{ marginBottom: '2rem' }}>This product may have been removed or the link is incorrect.</p>
+        <Link to="/products" className="btn btn-dark">Browse All Products</Link>
       </div>
     )
   }
@@ -120,7 +192,6 @@ export default function ProductDetail() {
     }
   }
 
-  // Sizes to show (from new schema or fallback)
   const availableSizes = prod.sizes?.length > 0
     ? prod.sizes
     : !['Belts', 'Branded Shoes', 'Watches', 'Underwear'].includes(prod.category)
@@ -144,25 +215,14 @@ export default function ProductDetail() {
           <div className="pd-main-img">
             <img src={galleryImages[selectedIndex] || galleryImages[0]} alt={prod.name} />
 
-            {/* ‹ › Arrow buttons */}
             {galleryImages.length > 1 && (
               <>
-                <button
-                  className="pd-arrow pd-arrow-left"
-                  onClick={goPrev}
-                  aria-label="Previous image"
-                >
+                <button className="pd-arrow pd-arrow-left" onClick={goPrev} aria-label="Previous image">
                   <FaChevronLeft />
                 </button>
-                <button
-                  className="pd-arrow pd-arrow-right"
-                  onClick={goNext}
-                  aria-label="Next image"
-                >
+                <button className="pd-arrow pd-arrow-right" onClick={goNext} aria-label="Next image">
                   <FaChevronRight />
                 </button>
-
-                {/* Dot indicators */}
                 <div className="pd-dots">
                   {galleryImages.map((_, i) => (
                     <button
@@ -177,7 +237,6 @@ export default function ProductDetail() {
             )}
           </div>
 
-          {/* Thumbnail strip */}
           {galleryImages.length > 1 && (
             <div className="pd-thumbs">
               {galleryImages.map((img, i) => (
@@ -197,15 +256,9 @@ export default function ProductDetail() {
         <div className="pd-info">
           {/* Badges row */}
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-            {prod.newArrival && (
-              <span className="pd-badge pd-badge-new">✦ New Arrival</span>
-            )}
-            {prod.bestSeller && (
-              <span className="pd-badge pd-badge-bestseller"><FaFire style={{ marginRight: '3px' }} />Best Seller</span>
-            )}
-            {prod.featured && (
-              <span className="pd-badge pd-badge-featured"><FaStar style={{ marginRight: '3px' }} />Featured</span>
-            )}
+            {prod.newArrival && <span className="pd-badge pd-badge-new">✦ New Arrival</span>}
+            {prod.bestSeller && <span className="pd-badge pd-badge-bestseller"><FaFire style={{ marginRight: '3px' }} />Best Seller</span>}
+            {prod.featured && <span className="pd-badge pd-badge-featured"><FaStar style={{ marginRight: '3px' }} />Featured</span>}
           </div>
 
           {prod.category && <div className="pd-category">{prod.category}{prod.subcategory ? ` · ${prod.subcategory}` : ''}</div>}
@@ -302,6 +355,17 @@ export default function ProductDetail() {
               </button>
             )}
             <Link to="/cart" className="btn btn-outline btn-lg">View Cart</Link>
+
+            {/* Share button */}
+            <button
+              className="btn btn-ghost"
+              onClick={handleShare}
+              title="Share this product"
+              style={{ minWidth: 'unset', padding: '0.75rem 1rem' }}
+            >
+              <FaShareAlt />
+              {copied && <span style={{ marginLeft: '0.4rem', fontSize: '0.75rem' }}>Copied!</span>}
+            </button>
           </div>
 
           {/* Trust badges */}

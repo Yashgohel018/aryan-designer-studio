@@ -37,6 +37,28 @@ export async function getProducts() {
   return []
 }
 
+// ── Read single product by ID (used by ProductDetail page) ──────────────────
+// Hits /api/products/:id directly — no need to download the full catalog
+export async function getProductById(id) {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(`${API_URL}/${id}`, { cache: 'no-store' })
+      if (res.status === 404) return null          // product genuinely not found
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return await res.json()
+    } catch (err) {
+      if (attempt === MAX_RETRIES) {
+        console.error('[getProductById] All retries exhausted:', err.message)
+        return null
+      }
+      const delay = RETRY_DELAYS_MS[attempt]
+      console.warn(`[getProductById] Attempt ${attempt + 1} failed. Retrying in ${delay / 1000}s…`)
+      await new Promise(r => setTimeout(r, delay))
+    }
+  }
+  return null
+}
+
 // ── Read all products including drafts (admin) ───────────────────────────────
 export async function getAllProducts(ownerPassword) {
   try {

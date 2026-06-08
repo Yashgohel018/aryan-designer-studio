@@ -5,6 +5,12 @@ import { FaTrophy, FaWhatsapp, FaCut } from 'react-icons/fa'
 export default function About() {
   const { hash } = useLocation()
 
+  // SEO: page title
+  useEffect(() => {
+    document.title = 'About Us — Aryan Designer Studio'
+    return () => { document.title = 'Aryan Designer Studio' }
+  }, [])
+
   useEffect(() => {
     if (hash === '#story') {
       // Small delay to let the page render fully before scrolling

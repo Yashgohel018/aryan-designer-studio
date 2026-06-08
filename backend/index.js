@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express    = require('express');
 const cors       = require('cors');
+const rateLimit  = require('express-rate-limit');
 const fs         = require('fs');
 const path       = require('path');
 const multer     = require('multer');
@@ -177,16 +178,38 @@ async function sendOTPEmail(otp) {
 }
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
+// Locked to only YOUR Vercel deployment + localhost dev
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'https://aryan-designer-studio-git-master-yashgohel018s-projects.vercel.app',
+  'https://aryan-designer-studio-3bwmr8ivw-yashgohel018s-projects.vercel.app',
+  // Add your final custom domain here if you ever set one:
+  // 'https://www.aryandesignerstudio.com',
+];
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    /\.vercel\.app$/,
-    /\.netlify\.app$/,
-  ],
+  origin: (incomingOrigin, callback) => {
+    // Allow server-to-server calls (e.g. GitHub Actions ping) and whitelisted origins
+    if (!incomingOrigin || ALLOWED_ORIGINS.includes(incomingOrigin)) {
+      callback(null, true)
+    } else {
+      callback(new Error(`CORS: origin '${incomingOrigin}' not allowed`))
+    }
+  },
   credentials: true,
 }));
 
 app.use(express.json({ limit: '10mb' }));
+
+// ── Rate limiting — protect auth endpoints from brute-force ──────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,  // 15 minutes
+  max: 10,                    // max 10 attempts per IP per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many attempts. Please try again after 15 minutes.' },
+});
+// Apply to all auth routes
+app.use('/api/auth', authLimiter);
 
 // ── Auth middleware ───────────────────────────────────────────────────────────
 async function requireOwner(req, res, next) {

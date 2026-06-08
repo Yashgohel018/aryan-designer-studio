@@ -129,13 +129,22 @@ export default function Home() {
   const [slowLoad, setSlowLoad] = useState(false)  // shows "waking up" notice after 5s
   const navigate = useNavigate()
 
+
+  // SEO: page title
+  useEffect(() => {
+    document.title = "Aryan Designer Studio — Premium Men's Fashion"
+    return () => { document.title = 'Aryan Designer Studio' }
+  }, [])
+
   useEffect(() => {
     // After 5s of loading, show a gentle "server waking up" notice
     const slowTimer = setTimeout(() => setSlowLoad(true), 5000)
 
     getProducts().then(all => {
       clearTimeout(slowTimer)
-      setFeatured(all.slice(0, 6))
+      // Show products marked as featured first; fall back to newest 6 if none are featured
+      const featuredOnes = all.filter(p => p.featured)
+      setFeatured(featuredOnes.length > 0 ? featuredOnes.slice(0, 6) : all.slice(0, 6))
       setIsLoading(false)
       setSlowLoad(false)
     })

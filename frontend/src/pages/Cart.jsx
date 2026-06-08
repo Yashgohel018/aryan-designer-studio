@@ -16,6 +16,11 @@ export default function Cart() {
   }, [items])
 
   useEffect(() => {
+    // Only fetch product list if some cart items are missing their stored image
+    // (items added via Add to Cart already have image stored — this is just a fallback)
+    const missingImages = items.some(it => !it.image)
+    if (!missingImages) return
+
     getProducts().then(list => {
       const map = {}
       list.forEach(p => { map[p.id] = p.images?.[0] })

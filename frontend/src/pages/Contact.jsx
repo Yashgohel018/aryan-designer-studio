@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { FaWhatsapp, FaInstagram, FaMapMarkerAlt, FaPhone, FaUserCircle } from 'react-icons/fa'
 
 const ENV_WHATSAPP = import.meta.env.VITE_OWNER_WHATSAPP
@@ -8,6 +8,12 @@ const instaLink = 'https://www.instagram.com/krish_aryan__?igsh=MWc1NGdpaGd2d3gw
 const addressLink = 'https://share.google/7dLoeKJ0syeFZPmdP'
 
 export default function Contact() {
+  // SEO: page title
+  useEffect(() => {
+    document.title = 'Contact Us — Aryan Designer Studio'
+    return () => { document.title = 'Aryan Designer Studio' }
+  }, [])
+
   return (
     <>
       {/* Hero */}
