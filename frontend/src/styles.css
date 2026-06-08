@@ -141,15 +141,17 @@ h3 {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-  transition: box-shadow var(--transition);
+  background: rgba(255, 255, 255, 0.3);
+  -webkit-backdrop-filter: blur(40px);
+  backdrop-filter: blur(40px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  transition: background var(--transition), backdrop-filter var(--transition), box-shadow var(--transition);
 }
 
 .site-header.scrolled {
-  box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .header-inner {
@@ -200,6 +202,7 @@ h3 {
   object-fit: contain;
   display: block;
   transition: opacity var(--transition);
+  mix-blend-mode: multiply;
 }
 
 .brand-logo-link:hover .brand-logo {
@@ -217,7 +220,7 @@ h3 {
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: rgba(0, 0, 0, 0.65);
   padding: 0.5rem 0.8rem;
   border-bottom: 2px solid transparent;
   transition: color var(--transition), border-color var(--transition);
@@ -225,8 +228,8 @@ h3 {
 
 .nav-link:hover,
 .nav-link.active {
-  color: var(--black);
-  border-bottom-color: var(--black);
+  color: #000000;
+  border-bottom-color: #000000;
 }
 
 /* Cart icon */
