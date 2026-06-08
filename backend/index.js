@@ -181,8 +181,9 @@ async function sendOTPEmail(otp) {
 // Locked to only YOUR Vercel deployment + localhost dev
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
-  'https://aryan-designer-studio-git-master-yashgohel018s-projects.vercel.app',
-  'https://aryan-designer-studio-3bwmr8ivw-yashgohel018s-projects.vercel.app',
+  'https://aryan-designer-studio.vercel.app',                                              // main production URL
+  'https://aryan-designer-studio-git-master-yashgohel018s-projects.vercel.app',           // git branch preview
+  'https://aryan-designer-studio-3bwmr8ivw-yashgohel018s-projects.vercel.app',            // deployment preview
   // Add your final custom domain here if you ever set one:
   // 'https://www.aryandesignerstudio.com',
 ];
