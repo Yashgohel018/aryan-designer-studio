@@ -18,7 +18,7 @@ export default function About() {
         const el = document.getElementById('story')
         if (el) {
           const navbarHeight = 70
-          const skipTopPadding = 10
+          const skipTopPadding = 4
           const y = el.getBoundingClientRect().top + window.scrollY - navbarHeight + skipTopPadding
           window.scrollTo({ top: y, behavior: 'smooth' })
         }

@@ -1534,7 +1534,7 @@ const s = {
   loginSub: { color: '#888', fontSize: '0.88rem', margin: '0 0 2rem' },
   loginForm: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
   pwdWrap: { position: 'relative' },
-  pwdInput: { width: '100%', padding: '0.85rem 3rem 0.85rem 1rem', borderRadius: 10, border: '1.5px solid #ddd', fontSize: '1rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' },
+  pwdInput: { width: '100%', padding: '0.85rem 3rem 0.85rem 1rem', borderRadius: 10, border: '1.5px solid #ddd', fontSize: '1rem', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', color: '#1a1a1a' },
   pwdInputErr: { borderColor: '#e53e3e' },
   eyeBtn: { position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' },
   errText: { color: '#e53e3e', fontSize: '0.82rem', margin: 0, textAlign: 'left' },
@@ -1582,10 +1582,10 @@ const s = {
   toolbarLeft: { display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: 1 },
   searchWrap: { position: 'relative', flex: 1, minWidth: 180, maxWidth: 340 },
   searchIcon: { position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', pointerEvents: 'none', color: '#aaa' },
-  searchInput: { width: '100%', padding: '0.6rem 2.2rem 0.6rem 2.4rem', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: '0.85rem', outline: 'none', background: '#fff', fontFamily: 'inherit', boxSizing: 'border-box' },
+  searchInput: { width: '100%', padding: '0.6rem 2.2rem 0.6rem 2.4rem', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: '0.85rem', outline: 'none', background: '#fff', fontFamily: 'inherit', boxSizing: 'border-box', color: '#1a1a1a' },
   clearBtn: { position: 'absolute', right: '0.65rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#aaa', fontSize: '0.8rem' },
-  catSelect: { padding: '0.6rem 0.9rem', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: '0.84rem', outline: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' },
-  viewToggleBtn: { padding: '0.55rem 1rem', background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center' },
+  catSelect: { padding: '0.6rem 0.9rem', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: '0.84rem', outline: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', color: '#1a1a1a' },
+  viewToggleBtn: { padding: '0.55rem 1rem', background: '#fff', border: '1.5px solid #e0ddd8', borderRadius: 8, fontSize: '0.8rem', fontWeight: 500, cursor: 'pointer', display: 'flex', alignItems: 'center', color: '#1a1a1a' },
 
   /* Grid */
   gridView: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' },
@@ -1705,7 +1705,7 @@ const s = {
     padding: '0.65rem 0.9rem', border: '1.5px solid #e2e2e2', borderRadius: 8,
     fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', background: '#fafafa',
     width: '100%', boxSizing: 'border-box',
-    transition: 'border-color 0.2s',
+    transition: 'border-color 0.2s', color: '#1a1a1a',
   },
 
   /* Status toggle */
